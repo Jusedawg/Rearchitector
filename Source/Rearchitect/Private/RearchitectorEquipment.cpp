@@ -11,7 +11,7 @@ void ARearchitectorEquipment::PerformMove(const FVector& MoveAmount)
 	
 	if(Rco)
 	{
-		Rco->PerformMove(TargetManager, MoveAmount * NudgeAmount);
+		Rco->PerformMove(TargetManager, MoveAmount);
 		RefreshOutline();
 	}
 }
@@ -22,7 +22,7 @@ void ARearchitectorEquipment::PerformRotate(const FVector& Rotation)
 	
 	if(Rco)
 	{
-		Rco->PerformRotate(TargetManager, Rotation * RotateAmount);
+		Rco->PerformRotate(TargetManager, Rotation);
 		RefreshOutline();
 	}
 }

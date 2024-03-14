@@ -47,11 +47,11 @@ struct FArchitectorTargetManager
 	GENERATED_BODY()
 
 public:
-	void MoveAllIndependent(const FVector& Move) const { for (const FArchitectorToolTarget& Target : Targets) Target.PerformMove(Move); }
+	void MoveAllIndependent(const FVector& Move) const { for (const FArchitectorToolTarget& Target : Targets) Target.PerformMove(Move * NudgeAmount); }
 
 	void MoveAllToPosition(const FVector& NewPosition) const;
 	
-	void RotateAllIndependent(const FVector& Rotate) const { for (const FArchitectorToolTarget& Target : Targets) Target.PerformRotate(Rotate); }
+	void RotateAllIndependent(const FVector& Rotate) const { for (const FArchitectorToolTarget& Target : Targets) Target.PerformRotate(Rotate * RotateAmount); }
 
 	FVector GetTargetListCenterPosition() const;
 
@@ -71,6 +71,12 @@ public:
 	void AddTarget(const FArchitectorToolTarget& Target) { Targets.Add(Target); }
 	void RemoveTarget(const FArchitectorToolTarget& Target) { Targets.Remove(Target); }
 	void ClearTargets() { Targets.Empty(); }
+
+	UPROPERTY(BlueprintReadWrite)
+	double NudgeAmount = 80;
+
+	UPROPERTY(BlueprintReadWrite)
+	double RotateAmount = 10;
 	
 private:
 	TArray<FArchitectorToolTarget> Targets;

@@ -167,12 +167,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	FArchitectorTargetManager TargetManager;
 
-	UPROPERTY(BlueprintReadWrite)
-	double NudgeAmount = 50;
-
-	UPROPERTY(BlueprintReadWrite)
-	double RotateAmount = 10;
-
 protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
@@ -215,6 +209,8 @@ private:
 
 	void SetNudgeAmount(const FInputActionValue& Value)
 	{
+		double& NudgeAmount = TargetManager.NudgeAmount;
+		
 		auto ValueDouble = Value.Get<float>();
 		if(NudgeAmount <= 0.1f && ValueDouble < 0) return;
 		
@@ -224,6 +220,7 @@ private:
 	}
 	void SetRotateAmount(const FInputActionValue& Value)
 	{
+		double& RotateAmount = TargetManager.RotateAmount;
 		auto ValueDouble = Value.Get<float>();
 		if(RotateAmount <= 0.1f && ValueDouble < 0) return;
 

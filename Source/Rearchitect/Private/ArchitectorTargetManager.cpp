@@ -67,16 +67,9 @@ void FArchitectorToolTarget::PerformRotate(const FVector& Rotate) const
 void FArchitectorTargetManager::MoveAllToPosition(const FVector& NewPosition) const
 {
 	auto OriginPosition = GetTargetListOriginPosition();
+	auto DeltaPosition = (NewPosition - OriginPosition).GridSnap(NudgeAmount);
 
-	for(auto& Target : Targets)
-	{
-		auto TargetOffset = Target.Target->GetActorLocation() - OriginPosition;
-		auto NewTargetPosition = NewPosition + TargetOffset;
-		auto TargetDelta = NewTargetPosition - Target.Target->GetActorLocation();
-
-		Target.PerformMove(TargetDelta);
-	}
-	
+	for(auto& Target : Targets) Target.PerformMove(DeltaPosition);
 }
 
 FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
