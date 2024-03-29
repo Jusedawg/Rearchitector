@@ -103,7 +103,7 @@ public:
 	{
 		Super::OnInteractWidgetAddedOrRemoved(Widget, Added);
 		
-		if(Added) EjectMappings();
+		if(Added) EjectMappings(Widget->Implements<UArchitectorUI>());
 		else InjectMappings();
 	}
 
@@ -117,12 +117,12 @@ public:
 	
 	void InjectMappings();
 
-	void EjectMappings();
+	void EjectMappings(bool KeepInterfaceKeybinds = false);
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorTargetManager TargetManager;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorInterfaceConfiguration InterfaceConfig;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
@@ -181,6 +181,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly) int MappingContextPriority = MAX_int32;
 	UPROPERTY(EditDefaultsOnly) UArchitectorToolMappingContext* ToolKeybinds;
+	UPROPERTY(EditDefaultsOnly) UFGInputMappingContext* UIKeybinds;
 	UPROPERTY() UArchitectorRCO* ServerActions;
 };
 

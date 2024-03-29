@@ -149,9 +149,10 @@ void ARearchitectorEquipment::InjectMappings()
 		
 		
 	EnhancedInputSystem->AddMappingContext(ToolKeybinds, MappingContextPriority);
+	EnhancedInputSystem->AddMappingContext(UIKeybinds, MappingContextPriority);
 }
 
-void ARearchitectorEquipment::EjectMappings()
+void ARearchitectorEquipment::EjectMappings(bool KeepInterfaceKeybinds)
 {
 	auto Player = Cast<AFGPlayerController>(GetInstigatorController());
 	if(!Player) return;
@@ -163,6 +164,7 @@ void ARearchitectorEquipment::EjectMappings()
 	if(!EnhancedInputSystem) return;
 		
 	EnhancedInputSystem->RemoveMappingContext(ToolKeybinds);
+	if(!KeepInterfaceKeybinds) EnhancedInputSystem->RemoveMappingContext(UIKeybinds);
 }
 
 void ARearchitectorEquipment::AddActor()

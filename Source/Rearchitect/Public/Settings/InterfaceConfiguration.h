@@ -2,6 +2,20 @@
 #pragma once
 #include "InterfaceConfiguration.generated.h"
 
+UINTERFACE()
+class UArchitectorUI : public UInterface
+{
+	GENERATED_BODY()
+};
+
+class IArchitectorUI
+{
+	GENERATED_BODY()
+
+public:
+	
+};
+
 USTRUCT(Blueprintable, BlueprintType)
 struct FArchitectorUIObject
 {
