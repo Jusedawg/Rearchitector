@@ -2,6 +2,8 @@
 #include "RearchitectorEquipment.h"
 
 #include "ArchitectorRCO.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "RearchitectorSubsystem.h"
 
 
@@ -9,9 +11,9 @@ void ARearchitectorEquipment::PerformMove(const FVector& MoveAmount)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	if(Rco)
+	if(ServerActions)
 	{
-		Rco->PerformMove(TargetManager, MoveAmount);
+		ServerActions->DeltaMove(TargetManager, MoveAmount);
 		RefreshOutline();
 	}
 }
@@ -20,9 +22,9 @@ void ARearchitectorEquipment::PerformRotate(const FVector& Rotation)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	if(Rco)
+	if(ServerActions)
 	{
-		Rco->PerformRotate(TargetManager, Rotation);
+		ServerActions->DeltaRotate(TargetManager, Rotation);
 		RefreshOutline();
 	}
 }
@@ -33,9 +35,53 @@ void ARearchitectorEquipment::MoveToAimPosition()
 
 	bool Success;
 	auto Data = GetTraceData(10000, TraceTypeQuery1, Success, true);
-	if(Success && Rco)
+	if(ServerActions)
 	{
-		Rco->BatchMove(TargetManager, Data.Location);
+		ServerActions->BatchMove(TargetManager, Success ? Data.Location : Data.TraceEnd);
+		RefreshOutline();
+	}
+}
+
+void ARearchitectorEquipment::SetRotation(const FQuat& Rotation)
+{
+	if(!TargetManager.HasAnyTargets()) AddActor();
+	
+	if(ServerActions)
+	{
+		ServerActions->SetRotate(TargetManager, Rotation);
+		RefreshOutline();
+	}
+}
+
+void ARearchitectorEquipment::RandomRotation()
+{
+	if(!TargetManager.HasAnyTargets()) AddActor();
+	
+	if(ServerActions)
+	{
+		ServerActions->RandomizeRotation(TargetManager);
+		RefreshOutline();
+	}
+}
+
+void ARearchitectorEquipment::RotateToTarget(AActor* Target, EArchitectorAxis Axis)
+{
+	if(!TargetManager.HasAnyTargets()) AddActor();
+	
+	if(ServerActions)
+	{
+		ServerActions->SetRotationToTarget(TargetManager, Target, Axis);
+		RefreshOutline();
+	}
+}
+
+void ARearchitectorEquipment::RotateToPosition(const FVector& Position, EArchitectorAxis Axis)
+{
+	if(!TargetManager.HasAnyTargets()) AddActor();
+	
+	if(ServerActions)
+	{
+		ServerActions->SetRotationToPosition(TargetManager, Position, Axis);
 		RefreshOutline();
 	}
 }
@@ -57,6 +103,18 @@ void ARearchitectorEquipment::ShowOutlines()
 	ARearchitectorSubsystem::Self->RefreshOutline(TargetManager.GetTargetActors());
 }
 
+FHitResult ARearchitectorEquipment::GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors)
+{
+	auto Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
+
+	FVector Start = Camera->GetCameraLocation();
+	FVector End = Camera->GetCameraLocation() + Camera->GetActorForwardVector() * TraceDistance;
+	FHitResult Result;
+
+	Success = UKismetSystemLibrary::LineTraceSingle(this, Start, End, Channel, false, IgnoreTargetedActors ? TargetManager.GetTargetActors() : TArray<AActor*>(), EDrawDebugTrace::None, Result, true);
+	return Result;
+}
+
 void ARearchitectorEquipment::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -72,6 +130,39 @@ void ARearchitectorEquipment::Tick(float DeltaSeconds)
 		bool IsTargeted = !TargetManager.HasAnyTargets() || TargetManager.HasTarget(Target);
 		Outline->ShowOutline(Target.Target, IsTargeted ? EOutlineColor::OC_HOLOGRAM : EOutlineColor::OC_SOFTCLEARANCE);
 	}
+}
+
+void ARearchitectorEquipment::InjectMappings()
+{
+	if(!IsLocallyControlled()) return;
+		
+	auto Player = Cast<AFGPlayerController>(GetInstigatorController());
+	if(!Player) return;
+		
+		
+	auto LocalPlayer = Player->GetLocalPlayer();
+	if(!LocalPlayer) return;
+		
+		
+	auto EnhancedInputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	if(!EnhancedInputSystem) return;
+		
+		
+	EnhancedInputSystem->AddMappingContext(ToolKeybinds, MappingContextPriority);
+}
+
+void ARearchitectorEquipment::EjectMappings()
+{
+	auto Player = Cast<AFGPlayerController>(GetInstigatorController());
+	if(!Player) return;
+		
+	auto LocalPlayer = Player->GetLocalPlayer();
+	if(!LocalPlayer) return;
+		
+	auto EnhancedInputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	if(!EnhancedInputSystem) return;
+		
+	EnhancedInputSystem->RemoveMappingContext(ToolKeybinds);
 }
 
 void ARearchitectorEquipment::AddActor()

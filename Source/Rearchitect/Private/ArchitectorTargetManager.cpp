@@ -3,27 +3,43 @@
 
 #include "ArchitectorTargetManager.h"
 #include "ActorUtilities.h"
+#include "FGBackgroundThread.h"
+#include "FGPlayerController.h"
+#include "Settings/ArchitectorAxis.h"
+#include "Settings/RotationSettings.h"
 
 void FArchitectorToolTarget::MakeMovable() const
 {
 	if(!Target) return;
-
-	if(IsAbstract)
-	{
-		InstanceHandle.GetInstanceComponent()->SetMobility(EComponentMobility::Movable);
-	}
 		
 	Target->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+	if(IsAbstract) InstanceHandle.GetInstanceComponent()->SetMobility(EComponentMobility::Movable);
+	
 	for(auto& Component : TInlineComponentArray<UFGColoredInstanceMeshProxy*>( Target ))
 	{
 		UActorUtilities::RefreshInstanceHandle(Component);
 	}
 }
 
-void FArchitectorToolTarget::PerformMove(const FVector& Move) const
+void FArchitectorToolTarget::ApplyAfterActionPatches() const
+{
+	//Temporary fix that removes the fog from conveyor and pipe inputs.
+	//This removes the pool handles forever, but they can be spawned back with FFGRunnableThread::RegisterActor()
+	//Calling that function here is inefficient because this is currently called every frame when used in "Move to position".
+	if(auto Buildable = Cast<AFGBuildable>(Target))
+	{
+		for(auto PoolHandle : Buildable->mPoolHandles)
+		{
+			PoolHandle->Release();
+		}
+		Buildable->mPoolHandles.Empty();
+	}
+}
+
+void FArchitectorToolTarget::DeltaMove(const FVector& Move) const
 {
 	if(!Target) return;
-		
+	
 	MakeMovable();
 
 	//Transform actor
@@ -38,19 +54,18 @@ void FArchitectorToolTarget::PerformMove(const FVector& Move) const
 		Transform.AddToTranslation(Move);
 		InstanceHandle.UpdateTransform(Transform);
 	}
+
+	ApplyAfterActionPatches();
 }
 
-void FArchitectorToolTarget::PerformRotate(const FVector& Rotate) const
+void FArchitectorToolTarget::DeltaRotate(const FQuat& DeltaRotation) const
 {
 	if(!Target) return;
 		
 	MakeMovable();
 		
-	auto Angle = FMath::DegreesToRadians( Rotate.Dot(FVector::OneVector) );
-	FQuat DeltaRotation = FQuat(Rotate.GetSafeNormal().GetAbs(), Angle);
-		
 	//Transform actor
-	Target->SetActorRotation( DeltaRotation * Target->GetActorQuat() );
+	Target->SetActorRotation(DeltaRotation * Target->GetActorQuat());
 		
 	if(IsAbstract)
 	{
@@ -64,24 +79,72 @@ void FArchitectorToolTarget::PerformRotate(const FVector& Rotate) const
 	}
 }
 
+void FArchitectorToolTarget::SetRotation(const FQuat& Quat) const
+{
+	if(!Target) return;
+		
+	MakeMovable();
+		
+	//Transform actor
+	Target->SetActorRotation(Quat);
+		
+	if(IsAbstract)
+	{
+		//Transform abstract instance
+		FTransform Transform;
+		InstanceHandle.GetInstanceComponent()->GetInstanceTransform(InstanceHandle.GetHandleID(), Transform);
+		Transform.SetRotation(Quat);
+		InstanceHandle.UpdateTransform(Transform);
+	}
+}
+
+void FArchitectorTargetManager::DeltaMoveAllIndependent(const FVector& Move) const
+{
+	const auto Delta = Movement.TransformVector(Move);
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		Target.DeltaMove(Delta);
+		Target.ApplyAfterActionPatches();
+	}
+}
+
 void FArchitectorTargetManager::MoveAllToPosition(const FVector& NewPosition) const
 {
-	auto OriginPosition = GetTargetListOriginPosition();
-	auto DeltaPosition = (NewPosition - OriginPosition).GridSnap(NudgeAmount);
+	const auto OriginPosition = GetTargetListOriginPosition();
+	const auto DeltaPosition = Movement.TransformPosition(NewPosition - OriginPosition);
+	
+	for(auto& Target : Targets)
+	{
+		Target.DeltaMove(DeltaPosition);
+		Target.ApplyAfterActionPatches();
+	}
+}
 
-	for(auto& Target : Targets) Target.PerformMove(DeltaPosition);
+void FArchitectorTargetManager::DeltaRotateAllIndependent(const FVector& Rotate) const
+{
+	auto const DeltaRotation = Rotation.ToDeltaRotation(Rotate);
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		Target.DeltaRotate(DeltaRotation);
+		Target.ApplyAfterActionPatches();
+	}
 }
 
 FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
 {
-	FVector TargetPositionSum;
+	if(Targets.Num() == 0) return FVector::ZeroVector;
+
+	FVector TargetPositionSum = FVector::ZeroVector;
 	int TargetCount = 0;
 
-	for (const auto& Target : TArray(Targets))
+	for (const auto& Target : Targets)
 	{
 		if(!Target.Target) continue;
-			
-		TargetPositionSum += Target.Target->GetActorLocation();
+		FVector Origin;
+		FVector Bounds;
+		Target.Target->GetActorBounds(false, Origin, Bounds, false);
+		
+		TargetPositionSum += Target.Target->GetActorLocation() + Bounds/2;
 		TargetCount++;
 	}
 
@@ -90,8 +153,11 @@ FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
 
 FVector FArchitectorTargetManager::GetTargetListOriginPosition() const
 {
+	if(Targets.Num() == 0) return FVector::ZeroVector;
+	if(Targets.Num() == 1) return Targets[0].Target->GetActorLocation();
+	
 	double LowestZ = MAX_dbl;
-	FVector TargetPositionSum;
+	FVector TargetPositionSum = FVector::ZeroVector;
 	int TargetCount = 0;
 	
 	for (const auto& Target : Targets)
@@ -106,4 +172,49 @@ FVector FArchitectorTargetManager::GetTargetListOriginPosition() const
 
 	auto CenterPoint = TargetPositionSum/TargetCount;
 	return FVector(CenterPoint.X, CenterPoint.Y, LowestZ);
+}
+
+void FArchitectorTargetManager::SetRotationAllIndependent(const FQuat& Quat) const
+{
+	const auto RotationValue = Rotation.AxisLock.ApplyLock(Quat.Euler()).ToOrientationQuat();
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		Target.SetRotation(RotationValue);
+		Target.ApplyAfterActionPatches();
+	}
+}
+
+void FArchitectorTargetManager::SetRandomRotation() const
+{
+	for(auto& Target : Targets)
+	{
+		auto RandomQuat = FQuat(FMath::VRand(), FMath::FRandRange(0.0, 360.0));
+		Target.SetRotation(RandomQuat);
+		Target.ApplyAfterActionPatches();
+	}
+}
+
+void FArchitectorTargetManager::SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis) const
+{
+	if(Actor) SetRotationToPosition(Actor->GetActorLocation(), Axis);
+}
+
+void FArchitectorTargetManager::SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis) const
+{
+	for(auto& Target : Targets)
+	{
+		if(!Target.Target) continue;
+		auto PositionDelta = Position - Target.Target->GetActorLocation();
+		UE::Math::TMatrix<double> ActorRotation;
+
+		switch (Axis)
+		{
+		case EArchitectorAxis::X: ActorRotation = FRotationMatrix::MakeFromX(PositionDelta); break;
+		case EArchitectorAxis::Y: ActorRotation = FRotationMatrix::MakeFromY(PositionDelta); break;
+		case EArchitectorAxis::Z: ActorRotation = FRotationMatrix::MakeFromZ(PositionDelta); break;
+		default: return;
+		}
+		
+		Target.SetRotation(ActorRotation.ToQuat());
+	}
 }

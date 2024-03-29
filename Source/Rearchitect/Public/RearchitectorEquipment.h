@@ -3,16 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbstractInstanceManager.h"
 #include "ArchitectorRCO.h"
 #include "ArchitectorTargetManager.h"
 #include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "FGPlayerController.h"
 #include "Equipment/FGEquipment.h"
 #include "Input/FGInputMappingContext.h"
-#include "Kismet/GameplayStatics.h"
+#include "Settings/ArchitectorAxis.h"
+#include "Settings/InterfaceConfiguration.h"
 #include "RearchitectorEquipment.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnArchitectorUIUpdated);
 
 UCLASS(Blueprintable, BlueprintType)
 class UArchitectorToolMappingContext : public UFGInputMappingContext
@@ -25,7 +26,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* Rotate;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* NudgeAmount;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* RotateAmount;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* UIMode;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* MoveToAim;
 };
 
@@ -39,59 +39,62 @@ public:
 
 	virtual bool ShouldSaveState() const override { return true; }
 
-	UFUNCTION() void PerformMove(const FVector& Translation);
-	UFUNCTION() void PerformRotate(const FVector& Rotation);
-	UFUNCTION() void MoveToAimPosition();
+	UFUNCTION(BlueprintCallable) void PerformMove(const FVector& Translation);
+	UFUNCTION(BlueprintCallable) void MoveToAimPosition();
+
+	//Rotate
+
+	///Delta rotate. Accepts rotation vector (i.e. 0 0 1 would rotate on Z axis), adds the converted quaternion to each target's current rotation
+	UFUNCTION(BlueprintCallable) void PerformRotate(const FVector& Rotation);
+
+	///Set rotation. Accepts rotation quaternion, sets all targets to that rotation.
+	UFUNCTION(BlueprintCallable) void SetRotation(const FQuat& Rotation);
+
+	///Sets random rotation to each target. Made for fun.
+	UFUNCTION(BlueprintCallable) void RandomRotation();
+
+	///Sets rotation of each target to look at the target with the given axis.
+	UFUNCTION(BlueprintCallable) void RotateToTarget(AActor* Target, EArchitectorAxis Axis = X);
+	
+	///Sets rotation of each target to look at the world position with the given axis.
+	UFUNCTION(BlueprintCallable) void RotateToPosition(const FVector& Position, EArchitectorAxis Axis = X);
+
+	
 	UFUNCTION() void RefreshOutline();
 	UFUNCTION() void HideOutlines();
 	UFUNCTION() void ShowOutlines();
-	UFUNCTION(BlueprintImplementableEvent) void ToggleUI(bool Open);
-
-	UFUNCTION(BlueprintCallable) void OnMoveClicked(const FVector& Direction) { PerformMove(Direction); }
-	UFUNCTION(BlueprintCallable) void OnRotateClicked(const FVector& Direction) { PerformRotate(Direction); }
 	
 	UFUNCTION(BlueprintCallable)
-	FHitResult GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors = false)
-	{
-		auto Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	FHitResult GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors = false);
 
-		FVector Start = Camera->GetCameraLocation();
-		FVector End = Camera->GetCameraLocation() + Camera->GetActorForwardVector() * TraceDistance;
-		FHitResult Result;
-
-		Success = UKismetSystemLibrary::LineTraceSingle(this, Start, End, Channel, false, IgnoreTargetedActors ? TargetManager.GetTargetActors() : TArray<AActor*>(), EDrawDebugTrace::None, Result, true);
-		return Result;
-	}
+	UFUNCTION(BlueprintPure) double GetNudgeAmount() const { return TargetManager.Movement.NudgeAmount; }
+	UFUNCTION(BlueprintPure) double GetRotateAmount() const { return TargetManager.Rotation.RotateDegrees; }
 
 	virtual void Tick(float DeltaSeconds) override;
 	
 	virtual void WasEquipped_Implementation() override
 	{
 		Super::WasEquipped_Implementation();
-		if(IsLocallyControlled())
-		{
-			InjectMappings();
+		InjectMappings();
+		RegisterRco();
 
-			RegisterRco();
-			auto EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
-			auto InputsContext = GetFirstContextOfType<UArchitectorToolMappingContext>();
-
-			if(!EnhancedInput || !InputsContext) return;
-			EnhancedInput->BindAction(InputsContext->Nudge, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Nudge);
-			EnhancedInput->BindAction(InputsContext->Rotate, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Rotate);
-			EnhancedInput->BindAction(InputsContext->NudgeAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetNudgeAmount);
-			EnhancedInput->BindAction(InputsContext->RotateAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetRotateAmount);
-			EnhancedInput->BindAction(InputsContext->SelectActor, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::AddActor);
-			EnhancedInput->BindAction(InputsContext->UIMode, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnUIButtonClicked);
-			EnhancedInput->BindAction(InputsContext->MoveToAim, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::MoveToAimPosition);
-		}
+		auto EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
+		if(!EnhancedInput) return;
+		
+		EnhancedInput->BindAction(ToolKeybinds->Nudge, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Nudge);
+		EnhancedInput->BindAction(ToolKeybinds->Rotate, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Rotate);
+		EnhancedInput->BindAction(ToolKeybinds->NudgeAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetNudgeAmount);
+		EnhancedInput->BindAction(ToolKeybinds->RotateAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetRotateAmount);
+		EnhancedInput->BindAction(ToolKeybinds->SelectActor, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::AddActor);
+		EnhancedInput->BindAction(ToolKeybinds->MoveToAim, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::MoveToAimPosition);
 	}
 
 	virtual void WasUnEquipped_Implementation() override
 	{
 		Super::WasUnEquipped_Implementation();
-		if(IsLocallyControlled()) EjectMappings();
-
+		if(!IsLocallyControlled()) return;
+		
+		EjectMappings();
 		HideOutlines();
 		TargetManager.ClearTargets();
 	}
@@ -99,6 +102,7 @@ public:
 	virtual void OnInteractWidgetAddedOrRemoved(UFGInteractWidget* Widget, bool Added) override
 	{
 		Super::OnInteractWidgetAddedOrRemoved(Widget, Added);
+		
 		if(Added) EjectMappings();
 		else InjectMappings();
 	}
@@ -110,62 +114,19 @@ public:
 		Super::Destroyed();
 	}
 #endif
+	
+	void InjectMappings();
 
-	template<class T>
-	T* GetFirstContextOfType()
-	{
-		for(auto& InputsContext : InputsContexts)
-		{
-			if(InputsContext.Value->IsA<T>()) return Cast<T>(InputsContext.Value);
-		}
-
-		return nullptr;
-	}
-	
-	void InjectMappings()
-	{
-		auto Player = Cast<AFGPlayerController>(GetInstigatorController());
-		if(!Player) return;
-		
-		
-		auto LocalPlayer = Player->GetLocalPlayer();
-		if(!LocalPlayer) return;
-		
-		
-		auto EnhancedInputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-		if(!EnhancedInputSystem) return;
-		
-		
-		for(auto& InputsContext : InputsContexts) EnhancedInputSystem->AddMappingContext(InputsContext.Value, MappingContextPriority);
-		ApplyScrollWheelPatch();
-	}
-
-	void EjectMappings()
-	{
-		auto Player = Cast<AFGPlayerController>(GetInstigatorController());
-		if(!Player) return;
-		
-		auto LocalPlayer = Player->GetLocalPlayer();
-		if(!LocalPlayer) return;
-		
-		auto EnhancedInputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-		if(!EnhancedInputSystem) return;
-		
-		for(auto& InputsContext : InputsContexts) EnhancedInputSystem->RemoveMappingContext(InputsContext.Value);
-		RemoveScrollWheelPatch();
-	}
-	
-	UFUNCTION(BlueprintImplementableEvent) void ApplyScrollWheelPatch();
-	UFUNCTION(BlueprintImplementableEvent) void RemoveScrollWheelPatch();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int MappingContextPriority = 10000;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<FName, UFGInputMappingContext*> InputsContexts;
+	void EjectMappings();
 
 	UPROPERTY(BlueprintReadWrite)
 	FArchitectorTargetManager TargetManager;
+
+	UPROPERTY(BlueprintReadWrite)
+	FArchitectorInterfaceConfiguration InterfaceConfig;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnArchitectorUIUpdated OnArchitectorUIUpdated;
 
 protected:
 
@@ -177,21 +138,8 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void DisplayHudHints();
-
-
+	
 	FORCEINLINE bool IsLocallyControlled() const { return GetInstigator() ? GetInstigator()->IsLocallyControlled() : false; }
-
-	static AActor* ResolveHit(const FHitResult& hit, FVector& Location)
-	{
-		Location = hit.Location;
-		if(auto abstractHit = Cast<AAbstractInstanceManager>(hit.GetActor()))
-		{
-			FInstanceHandle handle;
-			abstractHit->ResolveHit(hit, handle);
-			return handle.GetOwner<AActor>();
-		}
-		return hit.GetActor();
-	}
 
 private:
 
@@ -199,17 +147,17 @@ private:
 	{
 		auto Controller = Cast<AFGPlayerController>(GetInstigatorController());
 		
-		if(Controller) Rco = Controller->GetRemoteCallObjectOfClass<UArchitectorRCO>();
+		if(Controller) ServerActions = Controller->GetRemoteCallObjectOfClass<UArchitectorRCO>();
 	}
 
 	void AddActor();
 
-	void Nudge(const FInputActionValue& Value) { OnMoveClicked(Value.Get<FVector>()); }
-	void Rotate(const FInputActionValue& Value) { OnRotateClicked(Value.Get<FVector>()); }
+	void Nudge(const FInputActionValue& Value) { PerformMove(Value.Get<FVector>()); }
+	void Rotate(const FInputActionValue& Value) { PerformRotate(Value.Get<FVector>()); }
 
 	void SetNudgeAmount(const FInputActionValue& Value)
 	{
-		double& NudgeAmount = TargetManager.NudgeAmount;
+		double& NudgeAmount = TargetManager.Movement.NudgeAmount;
 		
 		auto ValueDouble = Value.Get<float>();
 		if(NudgeAmount <= 0.1f && ValueDouble < 0) return;
@@ -218,9 +166,11 @@ private:
 		
 		NudgeAmount += ValueDouble;
 	}
+	
 	void SetRotateAmount(const FInputActionValue& Value)
 	{
-		double& RotateAmount = TargetManager.RotateAmount;
+		double& RotateAmount = TargetManager.Rotation.RotateDegrees;
+		
 		auto ValueDouble = Value.Get<float>();
 		if(RotateAmount <= 0.1f && ValueDouble < 0) return;
 
@@ -229,8 +179,8 @@ private:
 		RotateAmount += ValueDouble;
 	}
 
-	void OnUIButtonClicked(const FInputActionValue& Value) { ToggleUI(Value.Get<bool>()); }
-	
-	UPROPERTY() UArchitectorRCO* Rco;
+	UPROPERTY(EditDefaultsOnly) int MappingContextPriority = MAX_int32;
+	UPROPERTY(EditDefaultsOnly) UArchitectorToolMappingContext* ToolKeybinds;
+	UPROPERTY() UArchitectorRCO* ServerActions;
 };
 
