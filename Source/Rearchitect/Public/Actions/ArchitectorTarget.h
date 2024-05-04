@@ -1,0 +1,62 @@
+﻿#pragma once
+#include "AbstractInstanceManager.h"
+#include "Buildables/FGBuildable.h"
+
+#include "ArchitectorTarget.generated.h"
+
+USTRUCT(Blueprintable, BlueprintType)
+struct FArchitectorToolTarget
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY() AActor* Target = nullptr;
+	UPROPERTY() bool IsAbstract = false;
+
+	FArchitectorToolTarget(){}
+	FArchitectorToolTarget(const FHitResult& HitResult)
+	{
+		HitResultActor = HitResult.GetActor();
+		HitComponent = HitResult.GetComponent();
+		HitItem = HitResult.Item;
+		
+		if(auto AbstractInstance = Cast<AAbstractInstanceManager>(HitResultActor))
+		{
+			FInstanceHandle InstanceHandle;
+			AbstractInstance->ResolveHit(HitResult, InstanceHandle);
+			Target = InstanceHandle.GetOwner<AActor>();
+			IsAbstract = true;
+		}
+		else Target = Cast<AFGBuildable>(HitResult.GetActor());
+	}
+
+	FInstanceHandle GenerateInstanceHandle() const
+	{
+		FHitResult Hit = FHitResult(HitResultActor, HitComponent, FVector::ZeroVector, FVector::ZeroVector);
+		Hit.Item = HitItem;
+
+		FInstanceHandle Out;
+		auto AbstractInstance = Cast<AAbstractInstanceManager>(HitResultActor);
+		AbstractInstance->ResolveHit(Hit, Out);
+
+		return Out;
+	}
+
+	FORCEINLINE friend uint32 GetTypeHash(const FArchitectorToolTarget& Thing)
+	{
+		uint32 Hash = FCrc::MemCrc32(&Thing, sizeof(FArchitectorToolTarget));
+		return Hash;
+	}
+
+	bool Equals(const FArchitectorToolTarget& Other) const { return *this == Other; }
+	bool operator==(const FArchitectorToolTarget& Other) const { return Target == Other.Target; }
+	static bool IsValidTarget(const FHitResult& HitResult) { return HitResult.GetActor() && (HitResult.GetActor()->IsA<AFGBuildable>() || HitResult.GetActor()->IsA<AAbstractInstanceManager>()); }
+
+private:
+
+	UPROPERTY() AActor* HitResultActor = nullptr;
+	UPROPERTY() UPrimitiveComponent* HitComponent = nullptr;
+	UPROPERTY() int32 HitItem = 0;
+	
+};

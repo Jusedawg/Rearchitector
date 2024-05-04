@@ -1,18 +1,114 @@
 ﻿#include "ArchitectorRCO.h"
 
-void UArchitectorRCO::DeltaMove_Implementation(const FArchitectorTargetManager& Manager, const FVector& Move) { Manager.DeltaMoveAllIndependent(Move); }
+#include "ActorUtilities.h"
 
-void UArchitectorRCO::DeltaRotate_Implementation(const FArchitectorTargetManager& Manager, const FVector& Rotate) { Manager.DeltaRotateAllIndependent(Rotate); }
-
-void UArchitectorRCO::BatchMove_Implementation(const FArchitectorTargetManager& Manager, const FVector& Position)
+void UArchitectorRCO::ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData)
 {
-	Manager.MoveAllToPosition(Position);
+	Multicast_ApplyTransformDataIndependent(Targets, TransformData);
 }
 
-void UArchitectorRCO::SetRotate_Implementation(const FArchitectorTargetManager& Manager, const FQuat& Rotation) { Manager.SetRotationAllIndependent(Rotation); }
+void UArchitectorRCO::Multicast_ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData)
+{
+	for (const FArchitectorToolTarget& Target : Targets) PerformActionOnTarget(Target, TransformData);
+}
 
-void UArchitectorRCO::RandomizeRotation_Implementation(const FArchitectorTargetManager& Manager) { Manager.SetRandomRotation(); }
+void UArchitectorRCO::ApplyIndividualTransformData_Implementation(const TArray<FArchitectorTargetedTransformData>& Data)
+{
+	Multicast_ApplyIndividualTransformData_Implementation(Data);
+}
 
-void UArchitectorRCO::SetRotationToTarget_Implementation(const FArchitectorTargetManager& Manager, AActor* Target, EArchitectorAxis Axis) { Manager.SetRotationToTarget(Target, Axis); }
+void UArchitectorRCO::Multicast_ApplyIndividualTransformData_Implementation(const TArray<FArchitectorTargetedTransformData>& Datas)
+{
+	for (const FArchitectorTargetedTransformData& Data : Datas) PerformActionOnTarget(Data.Target, Data.TransformData);
+}
 
-void UArchitectorRCO::SetRotationToPosition_Implementation(const FArchitectorTargetManager& Manager, const FVector& Position, EArchitectorAxis Axis) { Manager.SetRotationToPosition(Position, Axis); }
+void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target, const FArchitectorTransformData& TransformData)
+{
+	FInstanceHandle InstanceHandle;
+	//Make target actor movable
+	Target.Target->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+	if(Target.IsAbstract)
+	{
+		InstanceHandle = Target.GenerateInstanceHandle();
+		InstanceHandle.GetInstanceComponent()->SetMobility(EComponentMobility::Movable);
+	}
+	
+	for(auto& Component : TInlineComponentArray<UFGColoredInstanceMeshProxy*>( Target.Target ))
+	{
+		UActorUtilities::RefreshInstanceHandle(Component);
+	}
+
+	//Move
+	if(TransformData.Move.IsUsed)
+	{
+		//Transform actor
+		auto Transform = Target.Target->GetTransform();
+		auto& PositionValue = TransformData.Move.Value;
+			
+		if(TransformData.Move.UseAsSetAction) Transform.SetLocation(PositionValue);
+		else Transform.AddToTranslation(PositionValue);
+			
+		Target.Target->SetActorTransform(Transform);
+
+		//Transform abstract instance
+		if(Target.IsAbstract)
+		{
+			InstanceHandle.GetInstanceComponent()->GetInstanceTransform(InstanceHandle.GetHandleID(), Transform);
+
+			if(TransformData.Move.UseAsSetAction) Transform.SetLocation(PositionValue);
+			else Transform.AddToTranslation(PositionValue);
+				
+			InstanceHandle.UpdateTransform(Transform);
+		}
+	}
+
+	//Rotate
+	if(TransformData.Rotate.IsUsed)
+	{
+		//Transform actor
+		auto NewActorRotation = TransformData.Rotate.UseAsSetAction
+		? TransformData.Rotate.Value
+		: TransformData.Rotate.Value * Target.Target->GetActorQuat();
+			
+		Target.Target->SetActorRotation(NewActorRotation);
+
+		//Transform abstract instance
+		if(Target.IsAbstract)
+		{
+			FTransform Transform;
+			InstanceHandle.GetInstanceComponent()->GetInstanceTransform(InstanceHandle.GetHandleID(), Transform);
+
+			auto NewInstanceRotation = TransformData.Rotate.UseAsSetAction
+			? TransformData.Rotate.Value
+			: TransformData.Rotate.Value * Transform.GetRotation();
+
+			Transform.SetRotation(NewInstanceRotation);
+			InstanceHandle.UpdateTransform(Transform);
+		}
+	}
+
+	//Scale
+	if(TransformData.Scale.IsUsed)
+	{
+		//Transform actor
+		auto NewActorScale = TransformData.Scale.UseAsSetAction
+		? TransformData.Scale.Value
+		: Target.Target->GetActorScale3D() + TransformData.Scale.Value;
+
+		Target.Target->SetActorScale3D(NewActorScale);
+
+		//Transform abstract instance
+		if(Target.IsAbstract)
+		{
+			FTransform Transform;
+			InstanceHandle.GetInstanceComponent()->GetInstanceTransform(InstanceHandle.GetHandleID(), Transform);
+
+			auto NewInstanceScale = TransformData.Scale.UseAsSetAction
+			? TransformData.Scale.Value
+			: Transform.GetScale3D() + TransformData.Scale.Value;
+
+			Transform.SetScale3D(NewInstanceScale);
+			InstanceHandle.UpdateTransform(Transform);
+		}
+	}
+}

@@ -4,48 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "AbstractInstanceManager.h"
+#include "Actions/ToolActionBase.h"
+#include "Actions/ToolEmptyAction.h"
 #include "Buildables/FGBuildable.h"
 #include "Settings/ArchitectorAxis.h"
 #include "Settings/MovementSettings.h"
 #include "Settings/RotationSettings.h"
 #include "ArchitectorTargetManager.generated.h"
-
-USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorToolTarget
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY() AActor* Target = nullptr;
-	UPROPERTY() bool IsAbstract = false;
-	UPROPERTY() FInstanceHandle InstanceHandle;
-
-	FArchitectorToolTarget(){}
-	FArchitectorToolTarget(const FHitResult& HitResult)
-	{
-		if(auto AbstractInstance = Cast<AAbstractInstanceManager>(HitResult.GetActor()))
-		{
-			AbstractInstance->ResolveHit(HitResult, InstanceHandle);
-			Target = InstanceHandle.GetOwner<AActor>();
-			IsAbstract = true;
-		}
-		else Target = Cast<AFGBuildable>(HitResult.GetActor());
-	}
-
-	void MakeMovable() const;
-
-	void ApplyAfterActionPatches() const;
-
-	void DeltaMove(const FVector& Move) const;
-
-	void DeltaRotate(const FQuat& DeltaRotation) const;
-
-	void SetRotation(const FQuat& Quat) const;
-
-	bool operator==(const FArchitectorToolTarget& Other) const { return Target == Other.Target; }
-	static bool IsValidTarget(const FHitResult& HitResult) { return HitResult.GetActor() && (HitResult.GetActor()->IsA<AFGBuildable>() || HitResult.GetActor()->IsA<AAbstractInstanceManager>()); }
-};
 
 
 USTRUCT(Blueprintable, BlueprintType)
@@ -54,11 +19,12 @@ struct FArchitectorTargetManager
 	GENERATED_BODY()
 
 public:
-	void DeltaMoveAllIndependent(const FVector& Move) const;
+	void DeltaMoveAllIndependent(const FVector& Move);
 
-	void MoveAllToPosition(const FVector& NewPosition) const;
+	void MoveAllToPosition(const FVector& NewPosition);
+	void StopRecordingMoveAction() { History.Add(NewAction<UToolEmptyAction>()); }
 	
-	void DeltaRotateAllIndependent(const FVector& Rotate) const;
+	void DeltaRotateAllIndependent(const FVector& Rotate);
 
 	FVector GetTargetListCenterPosition() const;
 
@@ -78,19 +44,46 @@ public:
 	void AddTarget(const FArchitectorToolTarget& Target) { Targets.Add(Target); }
 	void RemoveTarget(const FArchitectorToolTarget& Target) { Targets.Remove(Target); }
 	void ClearTargets() { Targets.Empty(); }
-	void SetRotationAllIndependent(const FQuat& Quat) const;
-	void SetRandomRotation() const;
-	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis) const;
-	void SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis) const;
+	void SetRotationAllIndependent(const FQuat& Quat);
+	void SetRandomRotation();
+	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis);
+	void SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis);
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorTargetMovement Movement;
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorTargetRotation Rotation;
+
+	UPROPERTY()
+	UObject* WorldContext;
 	
 private:
+	UPROPERTY()
 	TArray<FArchitectorToolTarget> Targets;
+
+	UPROPERTY()
+	TArray<UToolActionBase*> History;
+
+	template<class T>
+	T* NewAction()
+	{
+		static_assert(std::is_base_of<UToolActionBase, T>(), "Action must be derived from UToolActionBase class!");
+		
+		UToolActionBase* Action = NewObject<T>(WorldContext);
+		History.Add(Action);
+		return (T*)Action;
+	}
+
+	template<class T>
+	T* GetIfLastOrMakeNew()
+	{
+		static_assert(std::is_base_of<UToolActionBase, T>(), "Action must be derived from UToolActionBase class!");
+
+		if(History.Num() > 0 && History.Last()->IsA<T>()) return (T*)History.Last();
+
+		return NewAction<T>();
+	}
 };
 
 

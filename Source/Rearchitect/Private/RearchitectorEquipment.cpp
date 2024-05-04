@@ -11,79 +11,55 @@ void ARearchitectorEquipment::PerformMove(const FVector& MoveAmount)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	if(ServerActions)
-	{
-		ServerActions->DeltaMove(TargetManager, MoveAmount);
-		RefreshOutline();
-	}
+	TargetManager.DeltaMoveAllIndependent(MoveAmount);
 }
 
 void ARearchitectorEquipment::PerformRotate(const FVector& Rotation)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	if(ServerActions)
-	{
-		ServerActions->DeltaRotate(TargetManager, Rotation);
-		RefreshOutline();
-	}
+	TargetManager.DeltaRotateAllIndependent(Rotation);
 }
 
-void ARearchitectorEquipment::MoveToAimPosition()
+void ARearchitectorEquipment::MoveToAimPosition(const FInputActionValue& ActionValue)
 {
-	if(!TargetManager.HasAnyTargets()) AddActor();
-
-	bool Success;
-	auto Data = GetTraceData(10000, TraceTypeQuery1, Success, true);
-	if(ServerActions)
+	if(ActionValue.Get<bool>())
 	{
-		ServerActions->BatchMove(TargetManager, Success ? Data.Location : Data.TraceEnd);
-		RefreshOutline();
+		if(!TargetManager.HasAnyTargets()) AddActor();
+
+		bool Success;
+		auto Data = GetTraceData(10000, TraceTypeQuery1, Success, true);
+		TargetManager.MoveAllToPosition(Success ? Data.Location : Data.TraceEnd);	
 	}
+	else TargetManager.StopRecordingMoveAction();
 }
 
 void ARearchitectorEquipment::SetRotation(const FQuat& Rotation)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
-	
-	if(ServerActions)
-	{
-		ServerActions->SetRotate(TargetManager, Rotation);
-		RefreshOutline();
-	}
+
+	TargetManager.SetRotationAllIndependent(Rotation);
 }
 
 void ARearchitectorEquipment::RandomRotation()
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
-	
-	if(ServerActions)
-	{
-		ServerActions->RandomizeRotation(TargetManager);
-		RefreshOutline();
-	}
+
+	TargetManager.SetRandomRotation();
 }
 
 void ARearchitectorEquipment::RotateToTarget(AActor* Target, EArchitectorAxis Axis)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
-	
-	if(ServerActions)
-	{
-		ServerActions->SetRotationToTarget(TargetManager, Target, Axis);
-		RefreshOutline();
-	}
+
+	TargetManager.SetRotationToTarget(Target, Axis);
 }
 
 void ARearchitectorEquipment::RotateToPosition(const FVector& Position, EArchitectorAxis Axis)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	if(ServerActions)
-	{
-		ServerActions->SetRotationToPosition(TargetManager, Position, Axis);
-		RefreshOutline();
-	}
+	TargetManager.SetRotationToPosition(Position, Axis);
 }
 
 void ARearchitectorEquipment::RefreshOutline()

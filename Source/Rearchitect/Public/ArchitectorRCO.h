@@ -3,10 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ArchitectorTargetManager.h"
 #include "FGRemoteCallObject.h"
+#include "Actions/ArchitectorTransform.h"
 #include "Net/UnrealNetwork.h"
-#include "Settings/ArchitectorAxis.h"
 #include "ArchitectorRCO.generated.h"
 
 
@@ -20,27 +19,22 @@ class REARCHITECT_API UArchitectorRCO : public UFGRemoteCallObject
 	GENERATED_BODY()
 
 public:
+	
 
 	UFUNCTION(Server, Reliable)
-	void DeltaMove(const FArchitectorTargetManager& Manager, const FVector& Move);
+	void ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData);
 
 	UFUNCTION(Server, Reliable)
-	void DeltaRotate(const FArchitectorTargetManager& Manager, const FVector& Rotate);
+	void ApplyIndividualTransformData(const TArray<FArchitectorTargetedTransformData>& Data);
 
-	UFUNCTION(Server, Unreliable)
-	void BatchMove(const FArchitectorTargetManager& Manager, const FVector& Position);
+private:
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData);
 
-	UFUNCTION(Server, Reliable)
-	void SetRotate(const FArchitectorTargetManager& Manager, const FQuat& Rotation);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ApplyIndividualTransformData(const TArray<FArchitectorTargetedTransformData>& Data);
 
-	UFUNCTION(Server, Reliable)
-	void RandomizeRotation(const FArchitectorTargetManager& Manager);
-
-	UFUNCTION(Server, Reliable)
-	void SetRotationToTarget(const FArchitectorTargetManager& Manager, AActor* Target, EArchitectorAxis Axis = X);
-
-	UFUNCTION(Server, Reliable)
-	void SetRotationToPosition(const FArchitectorTargetManager& Manager, const FVector& Position, EArchitectorAxis Axis = X);
+	void PerformActionOnTarget(const FArchitectorToolTarget& Target, const FArchitectorTransformData& TransformData);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
 	{

@@ -40,7 +40,7 @@ public:
 	virtual bool ShouldSaveState() const override { return true; }
 
 	UFUNCTION(BlueprintCallable) void PerformMove(const FVector& Translation);
-	UFUNCTION(BlueprintCallable) void MoveToAimPosition();
+	UFUNCTION(BlueprintCallable) void MoveToAimPosition(const FInputActionValue& ActionValue);
 
 	//Rotate
 
@@ -76,7 +76,7 @@ public:
 	{
 		Super::WasEquipped_Implementation();
 		InjectMappings();
-		RegisterRco();
+		TargetManager.WorldContext = this;
 
 		auto EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
 		if(!EnhancedInput) return;
@@ -143,13 +143,6 @@ protected:
 
 private:
 
-	void RegisterRco()
-	{
-		auto Controller = Cast<AFGPlayerController>(GetInstigatorController());
-		
-		if(Controller) ServerActions = Controller->GetRemoteCallObjectOfClass<UArchitectorRCO>();
-	}
-
 	void AddActor();
 
 	void Nudge(const FInputActionValue& Value) { PerformMove(Value.Get<FVector>()); }
@@ -182,6 +175,5 @@ private:
 	UPROPERTY(EditDefaultsOnly) int MappingContextPriority = MAX_int32;
 	UPROPERTY(EditDefaultsOnly) UArchitectorToolMappingContext* ToolKeybinds;
 	UPROPERTY(EditDefaultsOnly) UFGInputMappingContext* UIKeybinds;
-	UPROPERTY() UArchitectorRCO* ServerActions;
 };
 
