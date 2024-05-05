@@ -4,6 +4,7 @@
 #include "ArchitectorTargetManager.h"
 #include "Actions/ToolDeltaMoveAction.h"
 #include "Actions/ToolDeltaRotateAction.h"
+#include "Actions/ToolDeltaScaleAction.h"
 #include "Actions/ToolGenericAction.h"
 #include "Actions/ToolMoveToPositionAction.h"
 #include "Actions/ToolSetRotateAction.h"
@@ -100,6 +101,16 @@ void FArchitectorTargetManager::SetRotationToPosition(const FVector& Position, E
 
 	auto Action = NewAction<UToolGenericAction>();
 	Action->Data = TransformDatas;
+	Action->PerformAction();
+}
+
+void FArchitectorTargetManager::DeltaScaleAll(const FVector& ScaleAxis)
+{
+	const auto DeltaScale = Scale.TransformVector(ScaleAxis);
+
+	auto Action = NewAction<UToolDeltaScaleAction>();
+	Action->Targets = Targets;
+	Action->Amount = DeltaScale;
 	Action->PerformAction();
 }
 

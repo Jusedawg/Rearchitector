@@ -20,9 +20,9 @@ public:
 	virtual void UndoAction_Implementation() override;
 
 	
-	void InitAction(const TArray<FArchitectorToolTarget>& Targets)
+	void InitAction(const TArray<FArchitectorToolTarget>& InTargets)
 	{
-		this->Targets = Targets;
+		this->Targets = InTargets;
 
 		for (const FArchitectorToolTarget& Target : Targets) WorldPositionUndoCache.Add(Target, Target.Target->GetActorLocation());
 	}

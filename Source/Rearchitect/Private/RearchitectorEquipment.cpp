@@ -62,6 +62,13 @@ void ARearchitectorEquipment::RotateToPosition(const FVector& Position, EArchite
 	TargetManager.SetRotationToPosition(Position, Axis);
 }
 
+void ARearchitectorEquipment::PerformScale(const FVector& Scale)
+{
+	if(!TargetManager.HasAnyTargets()) AddActor();
+
+	TargetManager.DeltaScaleAll(Scale);
+}
+
 void ARearchitectorEquipment::RefreshOutline()
 {
 	HideOutlines();

@@ -10,6 +10,7 @@
 #include "Settings/ArchitectorAxis.h"
 #include "Settings/MovementSettings.h"
 #include "Settings/RotationSettings.h"
+#include "Settings/ScaleSettings.h"
 #include "ArchitectorTargetManager.generated.h"
 
 
@@ -20,11 +21,17 @@ struct FArchitectorTargetManager
 
 public:
 	void DeltaMoveAllIndependent(const FVector& Move);
+	void DeltaRotateAllIndependent(const FVector& Rotate);
 
 	void MoveAllToPosition(const FVector& NewPosition);
 	void StopRecordingMoveAction() { History.Add(NewAction<UToolEmptyAction>()); }
-	
-	void DeltaRotateAllIndependent(const FVector& Rotate);
+
+	void SetRotationAllIndependent(const FQuat& Quat);
+	void SetRandomRotation();
+	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis);
+	void SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis);
+
+	void DeltaScaleAll(const FVector& ScaleAxis);
 
 	FVector GetTargetListCenterPosition() const;
 
@@ -44,16 +51,15 @@ public:
 	void AddTarget(const FArchitectorToolTarget& Target) { Targets.Add(Target); }
 	void RemoveTarget(const FArchitectorToolTarget& Target) { Targets.Remove(Target); }
 	void ClearTargets() { Targets.Empty(); }
-	void SetRotationAllIndependent(const FQuat& Quat);
-	void SetRandomRotation();
-	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis);
-	void SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis);
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorTargetMovement Movement;
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorTargetRotation Rotation;
+
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	FArchitectorTargetScale Scale;
 
 	UPROPERTY()
 	UObject* WorldContext;

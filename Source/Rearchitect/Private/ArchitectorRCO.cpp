@@ -26,7 +26,7 @@ void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target
 {
 	FInstanceHandle InstanceHandle;
 	//Make target actor movable
-	Target.Target->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+	if(auto Root = Target.Target->GetRootComponent()) Root->SetMobility(EComponentMobility::Movable);
 	if(Target.IsAbstract)
 	{
 		InstanceHandle = Target.GenerateInstanceHandle();
@@ -49,6 +49,8 @@ void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target
 		else Transform.AddToTranslation(PositionValue);
 			
 		Target.Target->SetActorTransform(Transform);
+		Target.Target->CachedActorTransform = Transform;
+		
 
 		//Transform abstract instance
 		if(Target.IsAbstract)
