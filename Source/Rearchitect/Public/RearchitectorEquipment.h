@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ArchitectorRCO.h"
 #include "ArchitectorTargetManager.h"
 #include "EnhancedInputComponent.h"
 #include "FGPlayerController.h"

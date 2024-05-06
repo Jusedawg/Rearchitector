@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "RearchitectorSubsystem.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 
 
 void ARearchitectorEquipment::PerformMove(const FVector& MoveAmount)
@@ -94,7 +95,15 @@ FHitResult ARearchitectorEquipment::GetTraceData(double TraceDistance, TEnumAsBy
 	FVector End = Camera->GetCameraLocation() + Camera->GetActorForwardVector() * TraceDistance;
 	FHitResult Result;
 
-	Success = UKismetSystemLibrary::LineTraceSingle(this, Start, End, Channel, false, IgnoreTargetedActors ? TargetManager.GetTargetActors() : TArray<AActor*>(), EDrawDebugTrace::None, Result, true);
+	FCollisionQueryParams TraceParams(TEXT("LineTraceSingle"), SCENE_QUERY_STAT_ONLY(KismetTraceUtils), false);
+	TraceParams.bReturnPhysicalMaterial = true;
+	TraceParams.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable; // Ask for face index, as long as we didn't disable globally
+	TraceParams.AddIgnoredActor(this);
+	TraceParams.AddIgnoredActor(GetInstigatorCharacter());
+	
+	if(IgnoreTargetedActors) TargetManager.AddIgnoredActorsToTrace(TraceParams);
+
+	Success = GetWorld()->LineTraceSingleByChannel(Result, Start, End, UEngineTypes::ConvertToCollisionChannel(Channel), TraceParams);
 	return Result;
 }
 

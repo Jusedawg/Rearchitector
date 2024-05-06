@@ -12,6 +12,7 @@ struct FArchitectorToolTarget
 public:
 
 	UPROPERTY() AActor* Target = nullptr;
+	UPROPERTY() UPrimitiveComponent* HitComponent = nullptr;
 	UPROPERTY() bool IsAbstract = false;
 
 	FArchitectorToolTarget(){}
@@ -56,7 +57,6 @@ public:
 private:
 
 	UPROPERTY() AActor* HitResultActor = nullptr;
-	UPROPERTY() UPrimitiveComponent* HitComponent = nullptr;
 	UPROPERTY() int32 HitItem = 0;
 	
 };

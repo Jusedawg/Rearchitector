@@ -44,6 +44,15 @@ public:
 		return Out;
 	}
 
+	void AddIgnoredActorsToTrace(FCollisionQueryParams& QueryParams)
+	{
+		for (const FArchitectorToolTarget& Target : Targets)
+		{
+			QueryParams.AddIgnoredActor(Target.Target);
+			QueryParams.AddIgnoredComponent(Target.HitComponent);
+		}
+	}
+
 	bool HasAnyTargets() const { return Targets.Num() != 0; }
 	bool HasTarget(const FArchitectorToolTarget& Target) const { return Targets.Contains(Target); }
 	int TargetCount() const { return Targets.Num(); }
