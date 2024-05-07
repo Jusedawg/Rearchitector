@@ -52,7 +52,15 @@ public:
 
 	bool Equals(const FArchitectorToolTarget& Other) const { return *this == Other; }
 	bool operator==(const FArchitectorToolTarget& Other) const { return Target == Other.Target; }
-	static bool IsValidTarget(const FHitResult& HitResult) { return HitResult.GetActor() && (HitResult.GetActor()->IsA<AFGBuildable>() || HitResult.GetActor()->IsA<AAbstractInstanceManager>()); }
+	static bool IsValidTarget(const FHitResult& HitResult)
+	{
+		auto Actor = HitResult.GetActor();
+		if(!Actor) return false;
+		
+		bool IsValidClass = (Actor->IsA<AFGBuildable>() && !Actor->HasAnyFlags(RF_WasLoaded)) || HitResult.GetActor()->IsA<AAbstractInstanceManager>();
+		
+		return IsValidClass;
+	}
 
 private:
 

@@ -57,7 +57,7 @@ public:
 	bool HasTarget(const FArchitectorToolTarget& Target) const { return Targets.Contains(Target); }
 	int TargetCount() const { return Targets.Num(); }
 
-	void AddTarget(const FArchitectorToolTarget& Target) { Targets.Add(Target); }
+	void AddTarget(const FArchitectorToolTarget& Target) { Targets.AddUnique(Target); }
 	void RemoveTarget(const FArchitectorToolTarget& Target) { Targets.Remove(Target); }
 	void ClearTargets() { Targets.Empty(); }
 

@@ -12,7 +12,19 @@
 #include "Settings/InterfaceConfiguration.h"
 #include "RearchitectorEquipment.generated.h"
 
+UENUM(Blueprintable, BlueprintType)
+enum ECurrentToolMode
+{
+	CTM_None,
+	CTM_Nudge,
+	CTM_Rotate,
+	CTM_Scale,
+	CTM_MassSelect,
+	CTM_MassDeselect
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnArchitectorUIUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolModeUpdated, ECurrentToolMode, NewMode);
 
 UCLASS(Blueprintable, BlueprintType)
 class UArchitectorToolMappingContext : public UFGInputMappingContext
@@ -21,6 +33,7 @@ class UArchitectorToolMappingContext : public UFGInputMappingContext
 
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* SelectActor;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* AxisInput;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* Nudge;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* Rotate;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* Scale;
@@ -65,6 +78,13 @@ public:
 	UFUNCTION() void RefreshOutline();
 	UFUNCTION() void HideOutlines();
 	UFUNCTION() void ShowOutlines();
+
+	UFUNCTION(BlueprintCallable, DisplayName="Select Tool Mode")
+	void SelectMode_Blueprint(ECurrentToolMode NewMode)
+	{
+		CurrentToolMode = NewMode;
+		OnToolModeUpdated.Broadcast(NewMode);
+	}
 	
 	UFUNCTION(BlueprintCallable)
 	FHitResult GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors = false);
@@ -83,9 +103,10 @@ public:
 		auto EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
 		if(!EnhancedInput) return;
 		
-		EnhancedInput->BindAction(ToolKeybinds->Nudge, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Nudge);
-		EnhancedInput->BindAction(ToolKeybinds->Rotate, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Rotate);
-		EnhancedInput->BindAction(ToolKeybinds->Scale, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::Scale);
+		EnhancedInput->BindAction(ToolKeybinds->Nudge, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnNudgePressed);
+		EnhancedInput->BindAction(ToolKeybinds->Rotate, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnRotatePressed);
+		EnhancedInput->BindAction(ToolKeybinds->Scale, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnScalePressed);
+		EnhancedInput->BindAction(ToolKeybinds->AxisInput, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnVectorInput);
 		EnhancedInput->BindAction(ToolKeybinds->NudgeAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetNudgeAmount);
 		EnhancedInput->BindAction(ToolKeybinds->RotateAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetRotateAmount);
 		EnhancedInput->BindAction(ToolKeybinds->SelectActor, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::AddActor);
@@ -126,10 +147,20 @@ public:
 	FArchitectorTargetManager TargetManager;
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
+	bool UseActionToggle;
+	
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	TEnumAsByte<ECurrentToolMode> CurrentToolMode = CTM_None;
+	
+	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorInterfaceConfiguration InterfaceConfig;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnArchitectorUIUpdated OnArchitectorUIUpdated;
+	
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnToolModeUpdated OnToolModeUpdated;
+
 
 protected:
 
@@ -144,13 +175,25 @@ protected:
 	
 	FORCEINLINE bool IsLocallyControlled() const { return GetInstigator() ? GetInstigator()->IsLocallyControlled() : false; }
 
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void DisplayNoModeSelectedMessage();
+
 private:
 
 	void AddActor();
 
-	void Nudge(const FInputActionValue& Value) { PerformMove(Value.Get<FVector>()); }
-	void Rotate(const FInputActionValue& Value) { PerformRotate(Value.Get<FVector>()); }
-	void Scale(const FInputActionValue& Value) { PerformScale(Value.Get<FVector>()); }
+	void OnVectorInput(const FInputActionValue& Value)
+	{
+		const FVector VectorValue = Value.Get<FVector>();
+		switch (CurrentToolMode)
+		{
+		case ECurrentToolMode::CTM_None: DisplayNoModeSelectedMessage(); break;
+		case CTM_Nudge: PerformMove(VectorValue); break;
+		case CTM_Rotate: PerformRotate(VectorValue); break;
+		case CTM_Scale: PerformScale(VectorValue); break;
+		}
+	}
+	
 
 	void SetNudgeAmount(const FInputActionValue& Value)
 	{
@@ -189,6 +232,9 @@ private:
 		Amount += ValueDouble;
 	}
 
+	void OnNudgePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Nudge); }
+	void OnRotatePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Rotate); }
+	void OnScalePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Scale); }
 	UPROPERTY(EditDefaultsOnly) int MappingContextPriority = MAX_int32;
 	UPROPERTY(EditDefaultsOnly) UArchitectorToolMappingContext* ToolKeybinds;
 	UPROPERTY(EditDefaultsOnly) UFGInputMappingContext* UIKeybinds;
