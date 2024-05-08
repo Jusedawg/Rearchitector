@@ -55,6 +55,15 @@ public:
 
 	bool HasAnyTargets() const { return Targets.Num() != 0; }
 	bool HasTarget(const FArchitectorToolTarget& Target) const { return Targets.Contains(Target); }
+	bool HasTarget(AActor* Target) const
+	{
+		for (const FArchitectorToolTarget& TargetData : Targets)
+		{
+			if(TargetData == Target) return true;
+		}
+
+		return false;
+	}
 	int TargetCount() const { return Targets.Num(); }
 
 	void AddTarget(const FArchitectorToolTarget& Target) { Targets.AddUnique(Target); }

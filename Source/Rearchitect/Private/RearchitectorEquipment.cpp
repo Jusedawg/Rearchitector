@@ -29,7 +29,7 @@ void ARearchitectorEquipment::MoveToAimPosition(const FInputActionValue& ActionV
 		if(!TargetManager.HasAnyTargets()) AddActor();
 
 		bool Success;
-		auto Data = GetTraceData(10000, TraceTypeQuery1, Success, true);
+		auto Data = GetTraceData(TraceDistance, TraceTypeQuery1, Success, true);
 		TargetManager.MoveAllToPosition(Success ? Data.Location : Data.TraceEnd);	
 	}
 	else TargetManager.StopRecordingMoveAction();
@@ -72,8 +72,7 @@ void ARearchitectorEquipment::PerformScale(const FVector& Scale)
 
 void ARearchitectorEquipment::RefreshOutline()
 {
-	HideOutlines();
-	ShowOutlines();
+	ARearchitectorSubsystem::Self->RefreshOutline(TargetManager.GetTargetActors());
 }
 
 void ARearchitectorEquipment::HideOutlines()
@@ -87,12 +86,12 @@ void ARearchitectorEquipment::ShowOutlines()
 	ARearchitectorSubsystem::Self->RefreshOutline(TargetManager.GetTargetActors());
 }
 
-FHitResult ARearchitectorEquipment::GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors)
+FHitResult ARearchitectorEquipment::GetTraceData(double TraceDist, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors)
 {
 	auto Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
 
 	FVector Start = Camera->GetCameraLocation();
-	FVector End = Camera->GetCameraLocation() + Camera->GetActorForwardVector() * TraceDistance;
+	FVector End = Camera->GetCameraLocation() + Camera->GetActorForwardVector() * TraceDist;
 	FHitResult Result;
 
 	FCollisionQueryParams TraceParams(TEXT("LineTraceSingle"), SCENE_QUERY_STAT_ONLY(KismetTraceUtils), false);
@@ -112,7 +111,7 @@ void ARearchitectorEquipment::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	bool Success;
-	auto Data = GetTraceData(10000, TraceTypeQuery1, Success);
+	auto Data = GetTraceData(TraceDistance, TraceTypeQuery1, Success);
 	auto Outline = GetInstigatorCharacter()->GetOutline();
 	
 	if(!Success || !FArchitectorToolTarget::IsValidTarget(Data)) Outline->HideOutline();
@@ -122,6 +121,27 @@ void ARearchitectorEquipment::Tick(float DeltaSeconds)
 		bool IsTargeted = !TargetManager.HasAnyTargets() || TargetManager.HasTarget(Target);
 		Outline->ShowOutline(Target.Target, IsTargeted ? EOutlineColor::OC_HOLOGRAM : EOutlineColor::OC_SOFTCLEARANCE);
 	}
+
+
+	if(IsMassSelectActive)
+	{
+		Data = GetTraceData(TraceDistance, TraceTypeQuery1, Success);
+		auto CurrentMassSelectEndPoint = Success ? Data.Location : Data.TraceEnd;
+		
+		ARearchitectorSubsystem::Self->UpdateMassSelectBounds(StartingMassSelectPoint, CurrentMassSelectEndPoint, IsMassSelectInDeselectMode ? EOutlineColor::OC_DISMANTLE : EOutlineColor::OC_HOLOGRAM);
+
+		auto MassSelectOverlaps = ARearchitectorSubsystem::Self->GetMassSelectOverlaps();
+		for (const FOverlapInfo& Overlap : MassSelectOverlaps)
+		{
+			if(!FArchitectorToolTarget::IsValidTarget(Overlap.OverlapInfo)) continue;
+			
+			auto Target = FArchitectorToolTarget(Overlap.OverlapInfo);
+			if(IsMassSelectInDeselectMode) TargetManager.RemoveTarget(Target);
+			else TargetManager.AddTarget(Target);
+		}
+	}
+
+	RefreshOutline();
 }
 
 void ARearchitectorEquipment::InjectMappings()
@@ -162,7 +182,7 @@ void ARearchitectorEquipment::EjectMappings(bool KeepInterfaceKeybinds)
 void ARearchitectorEquipment::AddActor()
 {
 	bool Success;
-	auto Target = GetTraceData(100000, ETraceTypeQuery::TraceTypeQuery1, Success);
+	auto Target = GetTraceData(TraceDistance, ETraceTypeQuery::TraceTypeQuery1, Success);
 
 	if(Success)
 	{

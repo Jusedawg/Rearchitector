@@ -6,6 +6,7 @@
 #include "ArchitectorTargetManager.h"
 #include "EnhancedInputComponent.h"
 #include "FGPlayerController.h"
+#include "RearchitectorSubsystem.h"
 #include "Equipment/FGEquipment.h"
 #include "Input/FGInputMappingContext.h"
 #include "Settings/ArchitectorAxis.h"
@@ -39,7 +40,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* Scale;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* NudgeAmount;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* RotateAmount;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* ScaleAmount;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* MoveToAim;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* MassSelect;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UInputAction* MassDeselect;
 };
 
 UCLASS()
@@ -87,10 +91,11 @@ public:
 	}
 	
 	UFUNCTION(BlueprintCallable)
-	FHitResult GetTraceData(double TraceDistance, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors = false);
+	FHitResult GetTraceData(double TraceDist, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors = false);
 
 	UFUNCTION(BlueprintPure) double GetNudgeAmount() const { return TargetManager.Movement.NudgeAmount; }
 	UFUNCTION(BlueprintPure) double GetRotateAmount() const { return TargetManager.Rotation.RotateDegrees; }
+	UFUNCTION(BlueprintPure) double GetScaleAmount() const { return TargetManager.Scale.ScaleFactor; }
 
 	virtual void Tick(float DeltaSeconds) override;
 	
@@ -109,8 +114,11 @@ public:
 		EnhancedInput->BindAction(ToolKeybinds->AxisInput, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnVectorInput);
 		EnhancedInput->BindAction(ToolKeybinds->NudgeAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetNudgeAmount);
 		EnhancedInput->BindAction(ToolKeybinds->RotateAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetRotateAmount);
+		EnhancedInput->BindAction(ToolKeybinds->ScaleAmount, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::SetScaleAmount);
 		EnhancedInput->BindAction(ToolKeybinds->SelectActor, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::AddActor);
 		EnhancedInput->BindAction(ToolKeybinds->MoveToAim, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::MoveToAimPosition);
+		EnhancedInput->BindAction(ToolKeybinds->MassSelect, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnMassSelectPress);
+		EnhancedInput->BindAction(ToolKeybinds->MassDeselect, ETriggerEvent::Triggered, this, &ARearchitectorEquipment::OnMassDeselectPress);
 	}
 
 	virtual void WasUnEquipped_Implementation() override
@@ -161,6 +169,17 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnToolModeUpdated OnToolModeUpdated;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool IsMassSelectActive;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool IsMassSelectInDeselectMode;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector StartingMassSelectPoint;
+
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	double TraceDistance = 10000;
 
 protected:
 
@@ -235,6 +254,57 @@ private:
 	void OnNudgePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Nudge); }
 	void OnRotatePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Rotate); }
 	void OnScalePressed(const FInputActionValue& Value) { SelectMode(Value.Get<bool>(), ECurrentToolMode::CTM_Scale); }
+	void OnMassSelectPress(const FInputActionValue& Value)
+	{
+		if(!IsMassSelectActive || !IsMassSelectInDeselectMode) IsMassSelectActive = Value.Get<bool>();
+
+		if(IsMassSelectActive)
+		{
+			bool Success;
+			auto Data = GetTraceData(TraceDistance, TraceTypeQuery1, Success);
+
+			StartingMassSelectPoint = Success ? Data.Location - Data.Normal*10 : Data.TraceEnd;
+		}
+		else ARearchitectorSubsystem::Self->DisableMassSelectMesh();
+	}
+
+	void OnMassDeselectPress(const FInputActionValue& Value)
+	{
+		if(!IsMassSelectActive || IsMassSelectInDeselectMode)
+		{
+			IsMassSelectActive = Value.Get<bool>();
+			IsMassSelectInDeselectMode = IsMassSelectActive;
+		}
+
+		if(IsMassSelectActive)
+		{
+			bool Success;
+			auto Data = GetTraceData(TraceDistance, TraceTypeQuery1, Success);
+
+			StartingMassSelectPoint = Success ? Data.Location - Data.Normal*10 : Data.TraceEnd;
+		}
+		else ARearchitectorSubsystem::Self->DisableMassSelectMesh();
+	}
+
+	
+	void SelectMode(bool InputValue, ECurrentToolMode Mode)
+	{
+		if(UseActionToggle)
+		{
+			if(!InputValue) return;
+			
+			if(CurrentToolMode == Mode) CurrentToolMode = ECurrentToolMode::CTM_None;
+			else CurrentToolMode = Mode;
+		}
+		else
+		{
+			if(InputValue) CurrentToolMode = Mode;
+			else if(!InputValue && CurrentToolMode == Mode) CurrentToolMode = ECurrentToolMode::CTM_None;
+		}
+
+		OnToolModeUpdated.Broadcast(CurrentToolMode);
+	}
+
 	UPROPERTY(EditDefaultsOnly) int MappingContextPriority = MAX_int32;
 	UPROPERTY(EditDefaultsOnly) UArchitectorToolMappingContext* ToolKeybinds;
 	UPROPERTY(EditDefaultsOnly) UFGInputMappingContext* UIKeybinds;

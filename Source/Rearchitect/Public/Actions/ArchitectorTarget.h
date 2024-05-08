@@ -52,6 +52,7 @@ public:
 
 	bool Equals(const FArchitectorToolTarget& Other) const { return *this == Other; }
 	bool operator==(const FArchitectorToolTarget& Other) const { return Target == Other.Target; }
+	bool operator==(AActor* Actor) const { return Target == Actor; }
 	static bool IsValidTarget(const FHitResult& HitResult)
 	{
 		auto Actor = HitResult.GetActor();
