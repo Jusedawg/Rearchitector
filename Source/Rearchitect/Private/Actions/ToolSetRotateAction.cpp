@@ -10,8 +10,8 @@ void UToolSetRotateAction::PerformAction_Implementation()
 	
 	auto RCO = GetRCO();
 
-	FArchitectorTransformData TransformData;
-	TransformData.Rotate = FArchitectorRotateTransform(Value, true);
+	FActorTransformModifyData TransformData;
+	TransformData.Rotate = FRotationModifier(Value, true);
 
 	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
 }

@@ -2,27 +2,27 @@
 
 #include "ActorUtilities.h"
 
-void UArchitectorRCO::ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData)
+void UArchitectorRCO::ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData)
 {
 	Multicast_ApplyTransformDataIndependent(Targets, TransformData);
 }
 
-void UArchitectorRCO::Multicast_ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData)
+void UArchitectorRCO::Multicast_ApplyTransformDataIndependent_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData)
 {
 	for (const FArchitectorToolTarget& Target : Targets) PerformActionOnTarget(Target, TransformData);
 }
 
-void UArchitectorRCO::ApplyIndividualTransformData_Implementation(const TArray<FArchitectorTargetedTransformData>& Data)
+void UArchitectorRCO::ApplyIndividualTransformData_Implementation(const TArray<FTargetModifyData>& Data)
 {
 	Multicast_ApplyIndividualTransformData_Implementation(Data);
 }
 
-void UArchitectorRCO::Multicast_ApplyIndividualTransformData_Implementation(const TArray<FArchitectorTargetedTransformData>& Datas)
+void UArchitectorRCO::Multicast_ApplyIndividualTransformData_Implementation(const TArray<FTargetModifyData>& Datas)
 {
-	for (const FArchitectorTargetedTransformData& Data : Datas) PerformActionOnTarget(Data.Target, Data.TransformData);
+	for (const FTargetModifyData& Data : Datas) PerformActionOnTarget(Data.Target, Data.TransformData);
 }
 
-void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target, const FArchitectorTransformData& TransformData)
+void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData)
 {
 	FInstanceHandle InstanceHandle;
 	//Make target actor movable

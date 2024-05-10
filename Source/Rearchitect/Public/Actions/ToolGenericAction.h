@@ -19,5 +19,5 @@ public:
 	virtual void PerformAction_Implementation() override;
 	virtual void UndoAction_Implementation() override;
 
-	UPROPERTY() TArray<FArchitectorTargetedTransformData> Data;
+	UPROPERTY() TArray<FTargetModifyData> Data;
 };

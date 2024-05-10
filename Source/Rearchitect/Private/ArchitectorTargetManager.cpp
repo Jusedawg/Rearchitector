@@ -75,15 +75,15 @@ void FArchitectorTargetManager::SetRotationAllIndependent(const FQuat& Quat)
 
 void FArchitectorTargetManager::SetRandomRotation()
 {
-	TArray<FArchitectorTargetedTransformData> TransformDatas;
+	TArray<FTargetModifyData> TransformDatas;
 
-	FArchitectorTransformData Data = FArchitectorTransformData();
+	FActorTransformModifyData Data = FActorTransformModifyData();
 	for(auto& Target : Targets)
 	{
 		auto RandomQuat = FQuat(FMath::VRand(), FMath::FRandRange(0.0, 360.0));
-		Data.Rotate = FArchitectorRotateTransform(RandomQuat, true);
+		Data.Rotate = FRotationModifier(RandomQuat, true);
 		
-		TransformDatas.Add(FArchitectorTargetedTransformData(Target, Data));
+		TransformDatas.Add(FTargetModifyData(Target, Data));
 	}
 
 	auto Action = NewAction<UToolGenericAction>();
@@ -99,9 +99,9 @@ void FArchitectorTargetManager::SetRotationToTarget(AActor* Actor, EArchitectorA
 void FArchitectorTargetManager::SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis)
 {
 
-	TArray<FArchitectorTargetedTransformData> TransformDatas;
+	TArray<FTargetModifyData> TransformDatas;
 
-	FArchitectorTransformData Data = FArchitectorTransformData();
+	FActorTransformModifyData Data = FActorTransformModifyData();
 	for(auto& Target : Targets)
 	{
 		if(!Target.Target) continue;
@@ -116,9 +116,9 @@ void FArchitectorTargetManager::SetRotationToPosition(const FVector& Position, E
 		default: return;
 		}
 		
-		Data.Rotate = FArchitectorRotateTransform(ActorRotation.ToQuat(), true);
+		Data.Rotate = FRotationModifier(ActorRotation.ToQuat(), true);
 		
-		TransformDatas.Add(FArchitectorTargetedTransformData(Target, Data));
+		TransformDatas.Add(FTargetModifyData(Target, Data));
 	}
 
 	auto Action = NewAction<UToolGenericAction>();

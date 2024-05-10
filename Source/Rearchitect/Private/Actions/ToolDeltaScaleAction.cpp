@@ -5,16 +5,16 @@
 
 void UToolDeltaScaleAction::PerformAction_Implementation()
 {
-	FArchitectorTransformData TransformData;
-	TransformData.Scale = FArchitectorScaleTransform(Amount);
+	FActorTransformModifyData TransformData;
+	TransformData.Scale = FScaleModifier(Amount);
 
 	GetRCO()->ApplyTransformDataIndependent(Targets, TransformData);
 }
 
 void UToolDeltaScaleAction::UndoAction_Implementation()
 {
-	FArchitectorTransformData TransformData;
-	TransformData.Scale = FArchitectorScaleTransform(-Amount);
+	FActorTransformModifyData TransformData;
+	TransformData.Scale = FScaleModifier(-Amount);
 
 	GetRCO()->ApplyTransformDataIndependent(Targets, TransformData);
 }

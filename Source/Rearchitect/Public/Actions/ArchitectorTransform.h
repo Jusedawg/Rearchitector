@@ -6,7 +6,7 @@
 #include "ArchitectorTransform.generated.h"
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorMoveTransform
+struct FPositionModifier
 {
 	GENERATED_BODY()
 
@@ -24,13 +24,13 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame) FVector Value = FVector::ZeroVector;
 
-	FArchitectorMoveTransform(){}
-	FArchitectorMoveTransform(const FVector& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
+	FPositionModifier(){}
+	FPositionModifier(const FVector& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
 	
 };
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorRotateTransform
+struct FRotationModifier
 {
 	GENERATED_BODY()
 
@@ -48,12 +48,12 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame) FQuat Value = FQuat::Identity;
 
-	FArchitectorRotateTransform(){}
-	FArchitectorRotateTransform(const FQuat& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
+	FRotationModifier(){}
+	FRotationModifier(const FQuat& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
 };
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorScaleTransform
+struct FScaleModifier
 {
 	GENERATED_BODY()
 
@@ -71,32 +71,32 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame) FVector Value = FVector::ZeroVector;
 
-	FArchitectorScaleTransform(){}
-	FArchitectorScaleTransform(const FVector& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
+	FScaleModifier(){}
+	FScaleModifier(const FVector& Value, bool UseAsSet = false) : IsUsed(true), UseAsSetAction(UseAsSet), Value(Value){}
 	
 };
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorTransformData
+struct FActorTransformModifyData
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadWrite, SaveGame) FArchitectorMoveTransform Move = FArchitectorMoveTransform();
-	UPROPERTY(BlueprintReadWrite, SaveGame) FArchitectorRotateTransform Rotate = FArchitectorRotateTransform();
-	UPROPERTY(BlueprintReadWrite, SaveGame) FArchitectorScaleTransform Scale = FArchitectorScaleTransform();
+	UPROPERTY(BlueprintReadWrite, SaveGame) FPositionModifier Move = FPositionModifier();
+	UPROPERTY(BlueprintReadWrite, SaveGame) FRotationModifier Rotate = FRotationModifier();
+	UPROPERTY(BlueprintReadWrite, SaveGame) FScaleModifier Scale = FScaleModifier();
 };
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FArchitectorTargetedTransformData
+struct FTargetModifyData
 {
 	GENERATED_BODY()
 
 public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame) FArchitectorToolTarget Target = FArchitectorToolTarget();
-	UPROPERTY(BlueprintReadWrite, SaveGame) FArchitectorTransformData TransformData = FArchitectorTransformData();
+	UPROPERTY(BlueprintReadWrite, SaveGame) FActorTransformModifyData TransformData = FActorTransformModifyData();
 	
-	FArchitectorTargetedTransformData(){}
-	FArchitectorTargetedTransformData(const FArchitectorToolTarget& Target, const FArchitectorTransformData& TransformData) : Target(Target), TransformData(TransformData){}
+	FTargetModifyData(){}
+	FTargetModifyData(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData) : Target(Target), TransformData(TransformData){}
 };

@@ -5,7 +5,7 @@
 
 void UToolDeltaPivotRotateAction::PerformAction_Implementation()
 {
-	TArray<FArchitectorTargetedTransformData> TransformDatas;
+	TArray<FTargetModifyData> TransformDatas;
 
 	for (const FArchitectorToolTarget& Target : Targets)
 	{
@@ -13,10 +13,10 @@ void UToolDeltaPivotRotateAction::PerformAction_Implementation()
 		const auto RotatedTargetDistance = TargetDistance.RotateAngleAxis(Angle, Axis);
 		const auto DistanceDelta = RotatedTargetDistance - TargetDistance;
 
-		FArchitectorTargetedTransformData Data;
+		FTargetModifyData Data;
 		Data.Target = Target;
-		Data.TransformData.Move = FArchitectorMoveTransform(DistanceDelta);
-		Data.TransformData.Rotate = FArchitectorRotateTransform(FQuat(Axis, FMath::DegreesToRadians(Angle)));
+		Data.TransformData.Move = FPositionModifier(DistanceDelta);
+		Data.TransformData.Rotate = FRotationModifier(FQuat(Axis, FMath::DegreesToRadians(Angle)));
 
 		TransformDatas.Add(Data);
 	}

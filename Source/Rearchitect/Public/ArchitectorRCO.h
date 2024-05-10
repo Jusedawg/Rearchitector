@@ -22,19 +22,19 @@ public:
 	
 
 	UFUNCTION(Server, Reliable)
-	void ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData);
+	void ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
 
 	UFUNCTION(Server, Reliable)
-	void ApplyIndividualTransformData(const TArray<FArchitectorTargetedTransformData>& Data);
+	void ApplyIndividualTransformData(const TArray<FTargetModifyData>& Data);
 
 private:
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FArchitectorTransformData& TransformData);
+	void Multicast_ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_ApplyIndividualTransformData(const TArray<FArchitectorTargetedTransformData>& Data);
+	void Multicast_ApplyIndividualTransformData(const TArray<FTargetModifyData>& Data);
 
-	void PerformActionOnTarget(const FArchitectorToolTarget& Target, const FArchitectorTransformData& TransformData);
+	void PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
 	{

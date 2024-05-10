@@ -7,8 +7,8 @@ void UToolDeltaRotateAction::PerformAction_Implementation()
 {
 	auto RCO = GetRCO();
 
-	FArchitectorTransformData TransformData;
-	TransformData.Rotate = FArchitectorRotateTransform(Amount, false);
+	FActorTransformModifyData TransformData;
+	TransformData.Rotate = FRotationModifier(Amount, false);
 
 	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
 }
@@ -17,8 +17,8 @@ void UToolDeltaRotateAction::UndoAction_Implementation()
 {
 	auto RCO = GetRCO();
 
-	FArchitectorTransformData TransformData;
-	TransformData.Rotate = FArchitectorRotateTransform(-Amount, false);
+	FActorTransformModifyData TransformData;
+	TransformData.Rotate = FRotationModifier(-Amount, false);
 
 	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
 }
