@@ -3,6 +3,7 @@
 
 #include "ArchitectorTargetManager.h"
 #include "Actions/ToolDeltaMoveAction.h"
+#include "Actions/ToolDeltaPivotRotateAction.h"
 #include "Actions/ToolDeltaRotateAction.h"
 #include "Actions/ToolDeltaScaleAction.h"
 #include "Actions/ToolGenericAction.h"
@@ -33,12 +34,33 @@ void FArchitectorTargetManager::MoveAllToPosition(const FVector& NewPosition)
 	Action->PerformAction();
 }
 
-void FArchitectorTargetManager::DeltaRotateAllIndependent(const FVector& Rotate)
+void FArchitectorTargetManager::DeltaRotate(const FVector& Axis)
 {
-	auto const DeltaRotation = Rotation.ToDeltaRotation(Rotate);
+	if(Rotation.UsePivot) DeltaRotatePivot(Axis);
+	else DeltaRotateAllIndependent(Axis);
+}
+
+void FArchitectorTargetManager::DeltaRotateAllIndependent(const FVector& Axis)
+{
+	auto const DeltaRotation = Rotation.ToDeltaRotation(Axis);
 	auto Action = NewAction<UToolDeltaRotateAction>();
 	Action->Amount = DeltaRotation;
 	Action->Targets = Targets;
+	Action->PerformAction();
+}
+
+void FArchitectorTargetManager::DeltaRotatePivot(const FVector& Axis)
+{
+	const auto Origin = GetTargetListOriginPosition();
+	const auto Angle = Rotation.RotateDegrees;
+	const auto AxisLocked = Rotation.AxisLock.ApplyLock(Axis);
+	if(AxisLocked.IsZero()) return;
+	
+	auto Action = NewAction<UToolDeltaPivotRotateAction>();
+	Action->Targets = Targets;
+	Action->Origin = GetTargetListCenterPosition();
+	Action->Angle = Angle;
+	Action->Axis = AxisLocked;
 	Action->PerformAction();
 }
 
@@ -117,23 +139,11 @@ void FArchitectorTargetManager::DeltaScaleAll(const FVector& ScaleAxis)
 
 FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
 {
-	if(Targets.Num() == 0) return FVector::ZeroVector;
+	FVector Center;
+	FVector Bounds;
+	UGameplayStatics::GetActorArrayBounds(GetTargetActors(), false, Center, Bounds);
 
-	FVector TargetPositionSum = FVector::ZeroVector;
-	int TargetCount = 0;
-
-	for (const auto& Target : Targets)
-	{
-		if(!Target.Target) continue;
-		FVector Origin;
-		FVector Bounds;
-		Target.Target->GetActorBounds(false, Origin, Bounds, false);
-		
-		TargetPositionSum += Target.Target->GetActorLocation() + Bounds/2;
-		TargetCount++;
-	}
-
-	return TargetPositionSum/TargetCount;
+	return Center;
 }
 
 FVector FArchitectorTargetManager::GetTargetListOriginPosition() const

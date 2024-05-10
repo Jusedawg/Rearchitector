@@ -19,7 +19,7 @@ void ARearchitectorEquipment::PerformRotate(const FVector& Rotation)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 	
-	TargetManager.DeltaRotateAllIndependent(Rotation);
+	TargetManager.DeltaRotate(Rotation);
 }
 
 void ARearchitectorEquipment::MoveToAimPosition(const FInputActionValue& ActionValue)

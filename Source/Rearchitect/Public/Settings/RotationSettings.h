@@ -15,6 +15,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FVectorAxisLock AxisLock;
 
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	bool UsePivot = true;
+
 	FQuat ToDeltaRotation(const FVector& MovementAxis) const
 	{
 		auto AxisLocked = AxisLock.ApplyLock(MovementAxis * RotateDegrees);

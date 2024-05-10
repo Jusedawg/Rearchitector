@@ -25,6 +25,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void UndoAction();
 
+protected:
 	UArchitectorRCO* GetRCO() const
 	{
 		auto Player = Cast<AFGPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
@@ -32,4 +33,7 @@ public:
 
 		return Player->GetRemoteCallObjectOfClass<UArchitectorRCO>();
 	}
+
+	virtual void PerformAction_Implementation(){}
+	virtual void UndoAction_Implementation(){}
 };

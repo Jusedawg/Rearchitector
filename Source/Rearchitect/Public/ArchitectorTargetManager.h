@@ -21,11 +21,17 @@ struct FArchitectorTargetManager
 
 public:
 	void DeltaMoveAllIndependent(const FVector& Move);
-	void DeltaRotateAllIndependent(const FVector& Rotate);
 
 	void MoveAllToPosition(const FVector& NewPosition);
 	void StopRecordingMoveAction() { History.Add(NewAction<UToolEmptyAction>()); }
 
+	void DeltaRotate(const FVector& Axis);
+
+private:
+	void DeltaRotateAllIndependent(const FVector& Axis);
+	void DeltaRotatePivot(const FVector& Axis);
+
+public:
 	void SetRotationAllIndependent(const FQuat& Quat);
 	void SetRandomRotation();
 	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis);

@@ -16,6 +16,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FVectorAxisLock AxisLock;
+
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	bool UsePivot = true;
 	
 	FVector TransformVector(const FVector& ScaleAxis) const { return AxisLock.ApplyLock(ScaleAxis * ScaleFactor); }
 };
