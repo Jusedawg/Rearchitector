@@ -82,6 +82,10 @@ public:
 	UFUNCTION() void RefreshOutline();
 	UFUNCTION() void HideOutlines();
 	UFUNCTION() void ShowOutlines();
+	UFUNCTION(BlueprintCallable) void PreviewMassSelectActors();
+	UFUNCTION(BlueprintCallable) void HideMassSelectActors();
+
+	UFUNCTION(BlueprintCallable) void DismantleSelected();
 
 	UFUNCTION(BlueprintCallable, DisplayName="Select Tool Mode")
 	void SelectMode_Blueprint(ECurrentToolMode NewMode)

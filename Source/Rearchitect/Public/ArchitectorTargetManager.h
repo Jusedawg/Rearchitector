@@ -39,6 +39,7 @@ public:
 	
 	void DeltaScale(const FVector& Axis);
 
+	void DismantleAndRefund();
 private:
 	void DeltaScaleIndependent(const FVector& Axis);
 	void DeltaScalePivot(const FVector& Axis);
@@ -48,6 +49,9 @@ public:
 	FVector GetTargetListCenterPosition() const;
 
 	FVector GetTargetListOriginPosition() const;
+
+	FBox GetTargetListBoundingBox(FVector& CalculatedCenter) const;
+	void GetTargetListBounds(FVector& Min, FVector& Max) const;
 
 	TArray<AActor*> GetTargetActors() const;
 

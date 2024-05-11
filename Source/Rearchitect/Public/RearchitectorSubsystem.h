@@ -67,10 +67,18 @@ public:
 
 	void HideOutline(const TArray<AActor*>& OutlinedActors){ UActorUtilities::HideOutlineMultiForActors(OutlinedActors, OutlineProxyData); }
 	
-	void RefreshOutline(const TArray<AActor*>& InActors)
+	void RefreshOutline(const TArray<AActor*>& InActors, EOutlineColor OutlineColor = EOutlineColor::OC_HOLOGRAM)
 	{
 		UActorUtilities::HideOutlineMultiForActors(InActors, OutlineProxyData);
-		UActorUtilities::ShowOutlineMultiForActors(Proxy, InActors, OutlineProxyData, EOutlineColor::OC_HOLOGRAM);
+		UActorUtilities::ShowOutlineMultiForActors(Proxy, InActors, OutlineProxyData, OutlineColor);
+	}
+
+	void RefreshOutline(const TMap<AActor*, EOutlineColor>& InActors)
+	{
+		TArray<AActor*> Actors;
+		InActors.GenerateKeyArray(Actors);
+		UActorUtilities::HideOutlineMultiForActors(Actors, OutlineProxyData);
+		UActorUtilities::ShowOutlineMultiForActors(Proxy, InActors, OutlineProxyData);
 	}
 
 	UFUNCTION(BlueprintCallable)

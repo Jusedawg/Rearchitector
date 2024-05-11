@@ -1,6 +1,7 @@
 ﻿#include "ArchitectorRCO.h"
 
 #include "ActorUtilities.h"
+#include "FGPlayerState.h"
 
 void UArchitectorRCO::ApplyModifyDataToAll_Implementation(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData)
 {
@@ -20,6 +21,23 @@ void UArchitectorRCO::ApplyModifyDataOnEach_Implementation(const TArray<FTargetM
 void UArchitectorRCO::Multicast_ApplyModifyDataOnEach_Implementation(const TArray<FTargetModifyData>& Datas)
 {
 	for (const FTargetModifyData& Data : Datas) PerformActionOnTarget(Data.Target, Data.TransformData);
+}
+
+void UArchitectorRCO::DismantleAndRefund_Implementation(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets)
+{
+	TArray<FInventoryStack> Refund;
+	const bool NoBuildCost = Player->GetPlayerRules().NoBuildCost;
+
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		auto Buildable = Cast<AFGBuildable>(Target.Target);
+		if(!Buildable) continue;
+
+		IFGDismantleInterface::Execute_GetDismantleRefund(Buildable, Refund, NoBuildCost);
+		IFGDismantleInterface::Execute_Dismantle(Buildable);
+	}
+
+	Cast<AFGCharacterPlayer>(Player->GetPawn())->GetInventory()->AddStacks(Refund);
 }
 
 void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData)

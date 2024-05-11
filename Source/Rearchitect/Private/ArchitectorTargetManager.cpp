@@ -155,6 +155,17 @@ void FArchitectorTargetManager::DeltaScale(const FVector& Axis)
 	else DeltaScaleIndependent(Axis);
 }
 
+void FArchitectorTargetManager::DismantleAndRefund()
+{
+	auto Player = Cast<AFGPlayerController>(UGameplayStatics::GetPlayerController(WorldContext, 0));
+	if(!Player) return;
+
+	auto RCO = Player->GetRemoteCallObjectOfClass<UArchitectorRCO>();
+
+	RCO->DismantleAndRefund(Player->GetPlayerState<AFGPlayerState>(), Targets);
+	ClearTargets();
+}
+
 
 FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
 {
@@ -196,6 +207,40 @@ FVector FArchitectorTargetManager::GetTargetListOriginPosition() const
 
 	auto CenterPoint = TargetPositionSum/TargetCount;
 	return FVector(CenterPoint.X, CenterPoint.Y, LowestZ);
+}
+
+FBox FArchitectorTargetManager::GetTargetListBoundingBox(FVector& CalculatedCenter) const
+{
+	FVector PositionSum = FVector::ZeroVector;
+	int ValidObjects = 0;
+	FBox Bounds(ForceInit);
+
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		if(!Target.Target) continue;
+
+		Bounds += Target.Target->GetComponentsBoundingBox(true, true);
+		PositionSum += Target.Target->GetActorLocation();
+		ValidObjects++;
+	}
+
+	CalculatedCenter = PositionSum / ValidObjects;
+	return Bounds;
+}
+
+void FArchitectorTargetManager::GetTargetListBounds(FVector& Min, FVector& Max) const
+{
+	Min = FVector(DBL_MAX);
+	Max = FVector(DBL_MIN);
+
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		if(!Target.Target) continue;
+		
+		auto TLoc = Target.Target->GetActorLocation();
+		Min = Min.ComponentMin(TLoc);
+		Max = Max.ComponentMax(TLoc);
+	}
 }
 
 TArray<AActor*> FArchitectorTargetManager::GetTargetActors() const

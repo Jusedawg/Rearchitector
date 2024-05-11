@@ -27,12 +27,17 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
 
+	UFUNCTION(Server, Reliable)
+	void DismantleAndRefund(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets);
+
 private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ApplyModifyDataToAll(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
+
+	void DismantleAndRefund_Implementation(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets);
 
 	void PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData);
 

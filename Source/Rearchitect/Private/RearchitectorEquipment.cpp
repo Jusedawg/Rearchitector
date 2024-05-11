@@ -86,6 +86,34 @@ void ARearchitectorEquipment::ShowOutlines()
 	ARearchitectorSubsystem::Self->RefreshOutline(TargetManager.GetTargetActors());
 }
 
+void ARearchitectorEquipment::PreviewMassSelectActors()
+{
+	FVector Min, Max;
+	TargetManager.GetTargetListBounds(Min, Max);
+	ARearchitectorSubsystem::Self->UpdateMassSelectBounds(Min, Max, EOutlineColor::OC_NONE);
+
+	TMap<AActor*, EOutlineColor> OutlineActors;
+	for (const FOverlapInfo& Overlap : ARearchitectorSubsystem::Self->GetMassSelectOverlaps())
+	{
+		if(!FArchitectorToolTarget::IsValidTarget(Overlap.OverlapInfo)) continue;
+
+		auto Target = FArchitectorToolTarget(Overlap.OverlapInfo);
+		OutlineActors.Add(Target.Target, TargetManager.HasTarget(Target) ? EOutlineColor::OC_HOLOGRAM : EOutlineColor::OC_DISMANTLE);
+	}
+
+	ARearchitectorSubsystem::Self->RefreshOutline(OutlineActors);
+}
+
+void ARearchitectorEquipment::HideMassSelectActors()
+{
+	
+}
+
+void ARearchitectorEquipment::DismantleSelected()
+{
+	TargetManager.DismantleAndRefund();
+}
+
 FHitResult ARearchitectorEquipment::GetTraceData(double TraceDist, TEnumAsByte<ETraceTypeQuery> Channel, bool& Success, bool IgnoreTargetedActors)
 {
 	auto Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
