@@ -23,7 +23,3 @@ void UToolDeltaPivotRotateAction::PerformAction_Implementation()
 
 	GetRCO()->ApplyModifyDataOnEach(TransformDatas);
 }
-
-void UToolDeltaPivotRotateAction::UndoAction_Implementation()
-{
-}

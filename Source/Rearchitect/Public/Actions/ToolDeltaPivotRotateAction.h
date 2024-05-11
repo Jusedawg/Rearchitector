@@ -18,7 +18,6 @@ class REARCHITECT_API UToolDeltaPivotRotateAction : public UToolActionBase
 
 
 public:
-	UPROPERTY() TArray<FArchitectorToolTarget> Targets;
 	UPROPERTY() FVector Origin;
 	UPROPERTY() double Angle;
 	UPROPERTY() FVector Axis;
@@ -27,5 +26,4 @@ public:
 private:
 
 	virtual void PerformAction_Implementation() override;
-	virtual void UndoAction_Implementation() override;
 };

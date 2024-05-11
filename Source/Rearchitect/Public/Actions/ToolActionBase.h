@@ -25,6 +25,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void UndoAction();
 
+	void PostActionLoad(const TArray<FArchitectorToolTarget>& InTargets)
+	{
+		Targets = InTargets;
+
+		for (const FArchitectorToolTarget& Target : Targets) UndoCache.Add(Target, FActorTransformCachedData(Target.Target->GetActorTransform()));
+	}
+	
 protected:
 	UArchitectorRCO* GetRCO() const
 	{
@@ -35,5 +42,8 @@ protected:
 	}
 
 	virtual void PerformAction_Implementation(){}
-	virtual void UndoAction_Implementation(){}
+	virtual void UndoAction_Implementation();
+
+	UPROPERTY(SaveGame) TArray<FArchitectorToolTarget> Targets;
+	UPROPERTY(SaveGame) TMap<FArchitectorToolTarget, FActorTransformCachedData> UndoCache;
 };

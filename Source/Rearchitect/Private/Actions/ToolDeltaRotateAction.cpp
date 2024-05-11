@@ -13,12 +13,3 @@ void UToolDeltaRotateAction::PerformAction_Implementation()
 	RCO->ApplyModifyDataToAll(Targets, TransformData);	
 }
 
-void UToolDeltaRotateAction::UndoAction_Implementation()
-{
-	auto RCO = GetRCO();
-
-	FActorTransformModifyData TransformData;
-	TransformData.Rotate = FRotationModifier(-Amount, false);
-
-	RCO->ApplyModifyDataToAll(Targets, TransformData);	
-}

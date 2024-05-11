@@ -17,10 +17,6 @@ class REARCHITECT_API UToolSetRotateAction : public UToolActionBase
 public:
 
 	virtual void PerformAction_Implementation() override;
-	virtual void UndoAction_Implementation() override;
-
-	UPROPERTY() TArray<FArchitectorToolTarget> Targets;
+	
 	UPROPERTY() FQuat Value;
-
-	UPROPERTY() TMap<FArchitectorToolTarget, FQuat> RotationUndoCache;
 };

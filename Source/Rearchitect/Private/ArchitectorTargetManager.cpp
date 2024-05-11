@@ -19,7 +19,6 @@ void FArchitectorTargetManager::DeltaMoveAllIndependent(const FVector& Move)
 	const auto Delta = Movement.TransformVector(Move);
 	auto Action = NewAction<UToolDeltaMoveAction>();
 	Action->Amount = Delta;
-	Action->Targets = Targets;
 	Action->PerformAction();
 }
 
@@ -31,7 +30,6 @@ void FArchitectorTargetManager::MoveAllToPosition(const FVector& NewPosition)
 	auto Action = GetIfLastOrMakeNew<UToolMoveToPositionAction>();
 	
 	Action->CurrentDelta = DeltaPosition;
-	Action->Targets = Targets;
 	Action->PerformAction();
 }
 
@@ -41,12 +39,21 @@ void FArchitectorTargetManager::DeltaRotate(const FVector& Axis)
 	else DeltaRotateAllIndependent(Axis);
 }
 
+UToolActionBase* FArchitectorTargetManager::UndoLastAction()
+{
+	auto LastAction = History.Last();
+	History.Remove(LastAction);
+
+	if(LastAction) LastAction->UndoAction();
+
+	return LastAction;
+}
+
 void FArchitectorTargetManager::DeltaRotateAllIndependent(const FVector& Axis)
 {
 	auto const DeltaRotation = Rotation.ToDeltaRotation(Axis);
 	auto Action = NewAction<UToolDeltaRotateAction>();
 	Action->Amount = DeltaRotation;
-	Action->Targets = Targets;
 	Action->PerformAction();
 }
 
@@ -57,7 +64,6 @@ void FArchitectorTargetManager::DeltaRotatePivot(const FVector& Axis)
 	if(AxisLocked.IsZero()) return;
 	
 	auto Action = NewAction<UToolDeltaPivotRotateAction>();
-	Action->Targets = Targets;
 	Action->Origin = GetTargetListCenterPosition();
 	Action->Angle = Angle;
 	Action->Axis = AxisLocked;
@@ -70,7 +76,6 @@ void FArchitectorTargetManager::SetRotationAllIndependent(const FQuat& Quat)
 	const auto RotationValue = Rotation.AxisLock.ApplyLock(Quat.Euler()).ToOrientationQuat();
 	auto Action = NewAction<UToolSetRotateAction>();
 	Action->Value = RotationValue;
-	Action->Targets = Targets;
 	Action->PerformAction();
 }
 
@@ -132,7 +137,6 @@ void FArchitectorTargetManager::DeltaScaleIndependent(const FVector& Axis)
 	const auto DeltaScale = Scale.TransformVector(Axis);
 
 	auto Action = NewAction<UToolDeltaScaleAction>();
-	Action->Targets = Targets;
 	Action->Amount = DeltaScale;
 	Action->PerformAction();
 }
@@ -142,7 +146,6 @@ void FArchitectorTargetManager::DeltaScalePivot(const FVector& Axis)
 	const auto DeltaScale = Scale.TransformVector(Axis);
 
 	auto Action = NewAction<UToolDeltaPivotScaleAction>();
-	Action->Targets = Targets;
 	Action->ScaleAmount = DeltaScale;
 	Action->MovementLock = Movement.AxisLock;
 	Action->ShrinkCenter = Scale.UseOriginAsPivot ? GetTargetListOriginPosition() : GetTargetListCenterPosition();

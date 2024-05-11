@@ -26,6 +26,8 @@ public:
 	void StopRecordingMoveAction() { History.Add(NewAction<UToolEmptyAction>()); }
 
 	void DeltaRotate(const FVector& Axis);
+	TArray<UToolActionBase*> GetActionHistory() const { return History; }
+	UToolActionBase* UndoLastAction();
 
 private:
 	void DeltaRotateAllIndependent(const FVector& Axis);
@@ -99,6 +101,7 @@ private:
 		static_assert(std::is_base_of<UToolActionBase, T>(), "Action must be derived from UToolActionBase class!");
 		
 		UToolActionBase* Action = NewObject<T>(WorldContext);
+		Action->PostActionLoad(Targets);
 		History.Add(Action);
 		return (T*)Action;
 	}
@@ -135,6 +138,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static FVector GetCenterPosition(const FArchitectorTargetManager& Manager) { return Manager.GetTargetListCenterPosition(); }
+
+	UFUNCTION(BlueprintPure)
+	static TArray<UToolActionBase*> GetHistory(const FArchitectorTargetManager& Manager) { return Manager.GetActionHistory(); }
+
+	UFUNCTION(BlueprintCallable)
+	static UToolActionBase* UndoLastAction(UPARAM(ref) FArchitectorTargetManager& Manager) { return Manager.UndoLastAction(); }
 
 	UFUNCTION(BlueprintCallable)
 	static AActor* GetHitActor(const FHitResult& HitResult)

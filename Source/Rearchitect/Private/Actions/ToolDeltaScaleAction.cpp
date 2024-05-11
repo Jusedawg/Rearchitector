@@ -10,11 +10,3 @@ void UToolDeltaScaleAction::PerformAction_Implementation()
 
 	GetRCO()->ApplyModifyDataToAll(Targets, TransformData);
 }
-
-void UToolDeltaScaleAction::UndoAction_Implementation()
-{
-	FActorTransformModifyData TransformData;
-	TransformData.Scale = FScaleModifier(-Amount);
-
-	GetRCO()->ApplyModifyDataToAll(Targets, TransformData);
-}

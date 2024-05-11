@@ -88,6 +88,20 @@ public:
 };
 
 USTRUCT(Blueprintable, BlueprintType)
+struct FActorTransformCachedData
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(SaveGame, BlueprintReadWrite)
+	FTransform Transform;
+
+	FActorTransformCachedData(){}
+	FActorTransformCachedData(const FTransform& InTransform) : Transform(InTransform){}
+};
+
+USTRUCT(Blueprintable, BlueprintType)
 struct FTargetModifyData
 {
 	GENERATED_BODY()

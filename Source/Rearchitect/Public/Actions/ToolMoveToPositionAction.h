@@ -17,18 +17,6 @@ class REARCHITECT_API UToolMoveToPositionAction : public UToolActionBase
 public:
 
 	virtual void PerformAction_Implementation() override;
-	virtual void UndoAction_Implementation() override;
-
 	
-	void InitAction(const TArray<FArchitectorToolTarget>& InTargets)
-	{
-		this->Targets = InTargets;
-
-		for (const FArchitectorToolTarget& Target : Targets) WorldPositionUndoCache.Add(Target, Target.Target->GetActorLocation());
-	}
-
-	UPROPERTY() TArray<FArchitectorToolTarget> Targets;
 	UPROPERTY() FVector CurrentDelta;
-	
-	UPROPERTY() TMap<FArchitectorToolTarget, FVector> WorldPositionUndoCache;
 };

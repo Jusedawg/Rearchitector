@@ -19,12 +19,6 @@ public:
 
 	virtual void PerformAction_Implementation() override;
 
-	virtual void UndoAction_Implementation() override;
-
-
-	UPROPERTY()
-	TArray<FArchitectorToolTarget> Targets;
-
 	UPROPERTY()
 	FVector Amount;
 };

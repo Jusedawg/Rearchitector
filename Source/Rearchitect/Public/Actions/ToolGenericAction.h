@@ -16,8 +16,7 @@ class REARCHITECT_API UToolGenericAction : public UToolActionBase
 
 public:
 
-	virtual void PerformAction_Implementation() override;
-	virtual void UndoAction_Implementation() override;
+	virtual void PerformAction_Implementation() override { GetRCO()->ApplyModifyDataOnEach(Data); }
 
 	UPROPERTY() TArray<FTargetModifyData> Data;
 };

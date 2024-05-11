@@ -12,13 +12,3 @@ void UToolDeltaMoveAction::PerformAction_Implementation()
 
 	RCO->ApplyModifyDataToAll(Targets, TransformData);
 }
-
-void UToolDeltaMoveAction::UndoAction_Implementation()
-{
-	auto RCO = GetRCO();
-
-	FActorTransformModifyData TransformData;
-	TransformData.Move = FPositionModifier(-Amount);
-
-	RCO->ApplyModifyDataToAll(Targets, TransformData);
-}

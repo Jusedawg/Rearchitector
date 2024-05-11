@@ -18,7 +18,6 @@ class REARCHITECT_API UToolDeltaPivotScaleAction : public UToolActionBase
 public:
 
 	UPROPERTY() FVector ScaleAmount;
-	UPROPERTY() TArray<FArchitectorToolTarget> Targets;
 	UPROPERTY() FVectorAxisLock MovementLock;
 	UPROPERTY() FVector ShrinkCenter;
 
@@ -26,5 +25,4 @@ public:
 private:
 
 	virtual void PerformAction_Implementation() override;
-	virtual void UndoAction_Implementation() override;
 };
