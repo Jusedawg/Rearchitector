@@ -10,7 +10,7 @@ void UToolMoveToPositionAction::PerformAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Move = FPositionModifier(CurrentDelta);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);
+	RCO->ApplyModifyDataToAll(Targets, TransformData);
 }
 
 void UToolMoveToPositionAction::UndoAction_Implementation()
@@ -26,6 +26,6 @@ void UToolMoveToPositionAction::UndoAction_Implementation()
 		TransformDatas.Add(FTargetModifyData(PositionUndoCache.Key, Data));
 	}
 
-	RCO->ApplyIndividualTransformData(TransformDatas);
+	RCO->ApplyModifyDataOnEach(TransformDatas);
 }
 

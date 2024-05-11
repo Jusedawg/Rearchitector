@@ -10,7 +10,7 @@ void UToolDeltaMoveAction::PerformAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Move = FPositionModifier(Amount);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);
+	RCO->ApplyModifyDataToAll(Targets, TransformData);
 }
 
 void UToolDeltaMoveAction::UndoAction_Implementation()
@@ -20,5 +20,5 @@ void UToolDeltaMoveAction::UndoAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Move = FPositionModifier(-Amount);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);
+	RCO->ApplyModifyDataToAll(Targets, TransformData);
 }

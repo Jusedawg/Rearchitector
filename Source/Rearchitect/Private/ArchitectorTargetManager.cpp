@@ -4,6 +4,7 @@
 #include "ArchitectorTargetManager.h"
 #include "Actions/ToolDeltaMoveAction.h"
 #include "Actions/ToolDeltaPivotRotateAction.h"
+#include "Actions/ToolDeltaPivotScaleAction.h"
 #include "Actions/ToolDeltaRotateAction.h"
 #include "Actions/ToolDeltaScaleAction.h"
 #include "Actions/ToolGenericAction.h"
@@ -51,7 +52,6 @@ void FArchitectorTargetManager::DeltaRotateAllIndependent(const FVector& Axis)
 
 void FArchitectorTargetManager::DeltaRotatePivot(const FVector& Axis)
 {
-	const auto Origin = GetTargetListOriginPosition();
 	const auto Angle = Rotation.RotateDegrees;
 	const auto AxisLocked = Rotation.AxisLock.ApplyLock(Axis);
 	if(AxisLocked.IsZero()) return;
@@ -61,6 +61,7 @@ void FArchitectorTargetManager::DeltaRotatePivot(const FVector& Axis)
 	Action->Origin = GetTargetListCenterPosition();
 	Action->Angle = Angle;
 	Action->Axis = AxisLocked;
+	Action->MovementLock = Movement.AxisLock;
 	Action->PerformAction();
 }
 
@@ -126,9 +127,9 @@ void FArchitectorTargetManager::SetRotationToPosition(const FVector& Position, E
 	Action->PerformAction();
 }
 
-void FArchitectorTargetManager::DeltaScaleAll(const FVector& ScaleAxis)
+void FArchitectorTargetManager::DeltaScaleIndependent(const FVector& Axis)
 {
-	const auto DeltaScale = Scale.TransformVector(ScaleAxis);
+	const auto DeltaScale = Scale.TransformVector(Axis);
 
 	auto Action = NewAction<UToolDeltaScaleAction>();
 	Action->Targets = Targets;
@@ -136,14 +137,42 @@ void FArchitectorTargetManager::DeltaScaleAll(const FVector& ScaleAxis)
 	Action->PerformAction();
 }
 
+void FArchitectorTargetManager::DeltaScalePivot(const FVector& Axis)
+{
+	const auto DeltaScale = Scale.TransformVector(Axis);
+
+	auto Action = NewAction<UToolDeltaPivotScaleAction>();
+	Action->Targets = Targets;
+	Action->ScaleAmount = DeltaScale;
+	Action->MovementLock = Movement.AxisLock;
+	Action->ShrinkCenter = Scale.UseOriginAsPivot ? GetTargetListOriginPosition() : GetTargetListCenterPosition();
+	Action->PerformAction();
+}
+
+void FArchitectorTargetManager::DeltaScale(const FVector& Axis)
+{
+	if(Scale.UsePivot) DeltaScalePivot(Axis);
+	else DeltaScaleIndependent(Axis);
+}
+
 
 FVector FArchitectorTargetManager::GetTargetListCenterPosition() const
 {
-	FVector Center;
-	FVector Bounds;
-	UGameplayStatics::GetActorArrayBounds(GetTargetActors(), false, Center, Bounds);
+	FVector PositionSum = FVector::ZeroVector;
+	int ValidObjects = 0;
+	FBox Bounds(ForceInit);
 
-	return Center;
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		if(!Target.Target) continue;
+
+		Bounds += Target.Target->GetComponentsBoundingBox(true, true);
+		PositionSum += Target.Target->GetActorLocation();
+		ValidObjects++;
+	}
+
+	if(Bounds.IsValid) return Bounds.GetCenter();
+	else return PositionSum / ValidObjects;
 }
 
 FVector FArchitectorTargetManager::GetTargetListOriginPosition() const
@@ -167,6 +196,22 @@ FVector FArchitectorTargetManager::GetTargetListOriginPosition() const
 
 	auto CenterPoint = TargetPositionSum/TargetCount;
 	return FVector(CenterPoint.X, CenterPoint.Y, LowestZ);
+}
+
+TArray<AActor*> FArchitectorTargetManager::GetTargetActors() const
+{
+	TArray<AActor*> Out;
+	for (const FArchitectorToolTarget& Target : Targets) Out.Add(Target.Target);
+	return Out;
+}
+
+void FArchitectorTargetManager::AddIgnoredActorsToTrace(FCollisionQueryParams& QueryParams)
+{
+	for (const FArchitectorToolTarget& Target : Targets)
+	{
+		QueryParams.AddIgnoredActor(Target.Target);
+		QueryParams.AddIgnoredComponent(Target.HitComponent);
+	}
 }
 
 

@@ -8,7 +8,7 @@ void UToolDeltaScaleAction::PerformAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Scale = FScaleModifier(Amount);
 
-	GetRCO()->ApplyTransformDataIndependent(Targets, TransformData);
+	GetRCO()->ApplyModifyDataToAll(Targets, TransformData);
 }
 
 void UToolDeltaScaleAction::UndoAction_Implementation()
@@ -16,5 +16,5 @@ void UToolDeltaScaleAction::UndoAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Scale = FScaleModifier(-Amount);
 
-	GetRCO()->ApplyTransformDataIndependent(Targets, TransformData);
+	GetRCO()->ApplyModifyDataToAll(Targets, TransformData);
 }

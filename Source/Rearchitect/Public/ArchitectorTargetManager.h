@@ -36,28 +36,22 @@ public:
 	void SetRandomRotation();
 	void SetRotationToTarget(AActor* Actor, EArchitectorAxis Axis);
 	void SetRotationToPosition(const FVector& Position, EArchitectorAxis Axis);
+	
+	void DeltaScale(const FVector& Axis);
 
-	void DeltaScaleAll(const FVector& ScaleAxis);
+private:
+	void DeltaScaleIndependent(const FVector& Axis);
+	void DeltaScalePivot(const FVector& Axis);
 
+public:
+	
 	FVector GetTargetListCenterPosition() const;
 
 	FVector GetTargetListOriginPosition() const;
 
-	TArray<AActor*> GetTargetActors() const
-	{
-		TArray<AActor*> Out;
-		for (const FArchitectorToolTarget& Target : Targets) Out.Add(Target.Target);
-		return Out;
-	}
+	TArray<AActor*> GetTargetActors() const;
 
-	void AddIgnoredActorsToTrace(FCollisionQueryParams& QueryParams)
-	{
-		for (const FArchitectorToolTarget& Target : Targets)
-		{
-			QueryParams.AddIgnoredActor(Target.Target);
-			QueryParams.AddIgnoredComponent(Target.HitComponent);
-		}
-	}
+	void AddIgnoredActorsToTrace(FCollisionQueryParams& QueryParams);
 
 	bool HasAnyTargets() const { return Targets.Num() != 0; }
 	bool HasTarget(const FArchitectorToolTarget& Target) const { return Targets.Contains(Target); }

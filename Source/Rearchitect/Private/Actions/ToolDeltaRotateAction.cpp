@@ -10,7 +10,7 @@ void UToolDeltaRotateAction::PerformAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Rotate = FRotationModifier(Amount, false);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
+	RCO->ApplyModifyDataToAll(Targets, TransformData);	
 }
 
 void UToolDeltaRotateAction::UndoAction_Implementation()
@@ -20,5 +20,5 @@ void UToolDeltaRotateAction::UndoAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Rotate = FRotationModifier(-Amount, false);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
+	RCO->ApplyModifyDataToAll(Targets, TransformData);	
 }

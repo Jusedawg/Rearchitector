@@ -245,8 +245,11 @@ private:
 		auto ValueDouble = Value.Get<float>();
 		if(Amount <= 0.01f && ValueDouble < 0) return;
 
-		if (Amount < 1.0f || (Amount == 1.0f && ValueDouble < 0)) ValueDouble = 0.1f;
-		if (Amount < 0.1f || (Amount == 0.1f && ValueDouble < 0)) ValueDouble = 0.01f;
+		//0.1
+		if (Amount < 1.0f || (Amount == 1.0f && ValueDouble < 0)) ValueDouble *= 0.1f;
+
+		//0.01
+		if (Amount < 0.1f || (Amount == 0.1f && ValueDouble < 0)) ValueDouble *= 0.1f;
 		
 		Amount += ValueDouble;
 	}

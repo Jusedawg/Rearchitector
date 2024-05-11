@@ -5,24 +5,23 @@
 #include "CoreMinimal.h"
 #include "ToolActionBase.h"
 #include "Settings/VectorAxisLock.h"
-#include "ToolDeltaPivotRotateAction.generated.h"
+#include "ToolDeltaPivotScaleAction.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class REARCHITECT_API UToolDeltaPivotRotateAction : public UToolActionBase
+class REARCHITECT_API UToolDeltaPivotScaleAction : public UToolActionBase
 {
 	GENERATED_BODY()
 
-
-
 public:
+
+	UPROPERTY() FVector ScaleAmount;
 	UPROPERTY() TArray<FArchitectorToolTarget> Targets;
-	UPROPERTY() FVector Origin;
-	UPROPERTY() double Angle;
-	UPROPERTY() FVector Axis;
 	UPROPERTY() FVectorAxisLock MovementLock;
+	UPROPERTY() FVector ShrinkCenter;
+
 
 private:
 

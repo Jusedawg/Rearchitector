@@ -22,17 +22,17 @@ public:
 	
 
 	UFUNCTION(Server, Reliable)
-	void ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
+	void ApplyModifyDataToAll(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
 
 	UFUNCTION(Server, Reliable)
-	void ApplyIndividualTransformData(const TArray<FTargetModifyData>& Data);
+	void ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
 
 private:
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_ApplyTransformDataIndependent(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
+	void Multicast_ApplyModifyDataToAll(const TArray<FArchitectorToolTarget>& Targets, const FActorTransformModifyData& TransformData);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_ApplyIndividualTransformData(const TArray<FTargetModifyData>& Data);
+	void Multicast_ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
 
 	void PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData);
 

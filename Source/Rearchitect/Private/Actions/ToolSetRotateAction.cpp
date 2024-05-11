@@ -13,7 +13,7 @@ void UToolSetRotateAction::PerformAction_Implementation()
 	FActorTransformModifyData TransformData;
 	TransformData.Rotate = FRotationModifier(Value, true);
 
-	RCO->ApplyTransformDataIndependent(Targets, TransformData);	
+	RCO->ApplyModifyDataToAll(Targets, TransformData);	
 }
 
 void UToolSetRotateAction::UndoAction_Implementation()

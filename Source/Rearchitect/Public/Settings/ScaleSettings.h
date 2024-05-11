@@ -18,7 +18,10 @@ public:
 	FVectorAxisLock AxisLock;
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
-	bool UsePivot = true;
+	bool UsePivot = false;
+
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	bool UseOriginAsPivot = false;
 	
 	FVector TransformVector(const FVector& ScaleAxis) const { return AxisLock.ApplyLock(ScaleAxis * ScaleFactor); }
 };

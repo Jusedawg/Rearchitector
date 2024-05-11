@@ -67,7 +67,7 @@ void ARearchitectorEquipment::PerformScale(const FVector& Scale)
 {
 	if(!TargetManager.HasAnyTargets()) AddActor();
 
-	TargetManager.DeltaScaleAll(Scale);
+	TargetManager.DeltaScale(Scale);
 }
 
 void ARearchitectorEquipment::RefreshOutline()

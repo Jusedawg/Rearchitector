@@ -15,13 +15,13 @@ void UToolDeltaPivotRotateAction::PerformAction_Implementation()
 
 		FTargetModifyData Data;
 		Data.Target = Target;
-		Data.TransformData.Move = FPositionModifier(DistanceDelta);
+		Data.TransformData.Move = FPositionModifier(MovementLock.ApplyLock(DistanceDelta));
 		Data.TransformData.Rotate = FRotationModifier(FQuat(Axis, FMath::DegreesToRadians(Angle)));
 
 		TransformDatas.Add(Data);
 	}
 
-	GetRCO()->ApplyIndividualTransformData(TransformDatas);
+	GetRCO()->ApplyModifyDataOnEach(TransformDatas);
 }
 
 void UToolDeltaPivotRotateAction::UndoAction_Implementation()

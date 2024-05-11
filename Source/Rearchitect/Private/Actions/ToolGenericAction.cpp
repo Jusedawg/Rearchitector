@@ -7,7 +7,7 @@ void UToolGenericAction::PerformAction_Implementation()
 {
 	auto RCO = GetRCO();
 
-	RCO->ApplyIndividualTransformData(Data);
+	RCO->ApplyModifyDataOnEach(Data);
 }
 
 void UToolGenericAction::UndoAction_Implementation()
