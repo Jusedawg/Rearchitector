@@ -28,6 +28,9 @@ public:
 	void ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
 
 	UFUNCTION(Server, Reliable)
+	void ApplyTransformOnEach(const TArray<FTargetTransformData>& Data);
+
+	UFUNCTION(Server, Reliable)
 	void DismantleAndRefund(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets);
 
 private:
@@ -36,6 +39,9 @@ private:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ApplyModifyDataOnEach(const TArray<FTargetModifyData>& Data);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ApplyTransformOnEach(const TArray<FTargetTransformData>& Data);
 
 	void DismantleAndRefund_Implementation(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets);
 

@@ -41,8 +41,13 @@ void FArchitectorTargetManager::DeltaRotate(const FVector& Axis)
 
 UToolActionBase* FArchitectorTargetManager::UndoLastAction()
 {
+	if(History.Num() == 0) return nullptr;
+	
 	auto LastAction = History.Last();
 	History.Remove(LastAction);
+
+	//If the last action in the history is an empty action (i.e. used for signaling that the "Move to aim" has ended) then undo another action.
+	if(LastAction->IsA<UToolEmptyAction>()) return UndoLastAction();
 
 	if(LastAction) LastAction->UndoAction();
 

@@ -26,7 +26,15 @@ public:
 	void StopRecordingMoveAction() { History.Add(NewAction<UToolEmptyAction>()); }
 
 	void DeltaRotate(const FVector& Axis);
-	TArray<UToolActionBase*> GetActionHistory() const { return History; }
+	TArray<UToolActionBase*> GetActionHistory() const
+	{
+		TArray<UToolActionBase*> Out;
+		for (UToolActionBase* ToolActionBase : History)
+		{
+			if(ToolActionBase && ToolActionBase->GetClass() != UToolEmptyAction::StaticClass()) Out.Add(ToolActionBase);
+		}
+		return Out;
+	}
 	UToolActionBase* UndoLastAction();
 
 private:

@@ -12,7 +12,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Abstract, BlueprintType)
 class REARCHITECT_API UToolActionBase : public UObject
 {
 	GENERATED_BODY()
@@ -29,9 +29,24 @@ public:
 	{
 		Targets = InTargets;
 
-		for (const FArchitectorToolTarget& Target : Targets) UndoCache.Add(Target, FActorTransformCachedData(Target.Target->GetActorTransform()));
+		for (const FArchitectorToolTarget& Target : Targets)
+		{
+			FTargetTransformData Data;
+			Data.Target = Target;
+			Data.ActorTransform = Target.Target->GetActorTransform();
+
+			if(Target.IsAbstract)
+			{
+				auto Handle = Target.GenerateInstanceHandle();
+				Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), Data.AbstractTransform, true);
+			}
+
+			UndoCache.Add(Data);
+		}
 	}
-	
+
+	UFUNCTION(BlueprintPure)
+	int GetNumTargets() const { return Targets.Num(); }
 protected:
 	UArchitectorRCO* GetRCO() const
 	{
@@ -42,8 +57,8 @@ protected:
 	}
 
 	virtual void PerformAction_Implementation(){}
-	virtual void UndoAction_Implementation();
+	virtual void UndoAction_Implementation() { GetRCO()->ApplyTransformOnEach(UndoCache); }
 
 	UPROPERTY(SaveGame) TArray<FArchitectorToolTarget> Targets;
-	UPROPERTY(SaveGame) TMap<FArchitectorToolTarget, FActorTransformCachedData> UndoCache;
+	UPROPERTY(SaveGame) TArray<FTargetTransformData> UndoCache;
 };

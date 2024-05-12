@@ -106,4 +106,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, SaveGame)
 	FArchitectorQuickActionsPanel QuickActionsPanel;
+
+	UPROPERTY(BlueprintReadWrite, SaveGame)
+	FArchitectorUIObject ActionHistory = FArchitectorUIObject(FVector2D(1600, 252), true);
 };

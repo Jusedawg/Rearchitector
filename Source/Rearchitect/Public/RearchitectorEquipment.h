@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "ArchitectorTargetManager.h"
 #include "EnhancedInputComponent.h"
-#include "FGPlayerController.h"
 #include "RearchitectorSubsystem.h"
 #include "Equipment/FGEquipment.h"
 #include "Input/FGInputMappingContext.h"

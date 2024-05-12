@@ -23,6 +23,26 @@ void UArchitectorRCO::Multicast_ApplyModifyDataOnEach_Implementation(const TArra
 	for (const FTargetModifyData& Data : Datas) PerformActionOnTarget(Data.Target, Data.TransformData);
 }
 
+void UArchitectorRCO::ApplyTransformOnEach_Implementation(const TArray<FTargetTransformData>& Data)
+{
+	Multicast_ApplyTransformOnEach_Implementation(Data);
+}
+
+void UArchitectorRCO::Multicast_ApplyTransformOnEach_Implementation(const TArray<FTargetTransformData>& Data)
+{
+	for (const FTargetTransformData& TargetTransformData : Data)
+	{
+		if(!TargetTransformData.Target.Target) continue;
+		
+		const auto& ActorT = TargetTransformData.ActorTransform;
+		const auto& AbstT = TargetTransformData.AbstractTransform;
+		const auto& Target = TargetTransformData.Target;
+
+		Target.Target->SetActorTransform(ActorT);
+		if(Target.IsAbstract) Target.GenerateInstanceHandle().UpdateTransform(AbstT);
+	}
+}
+
 void UArchitectorRCO::DismantleAndRefund_Implementation(AFGPlayerState* Player, const TArray<FArchitectorToolTarget>& Targets)
 {
 	TArray<FInventoryStack> Refund;
@@ -42,6 +62,8 @@ void UArchitectorRCO::DismantleAndRefund_Implementation(AFGPlayerState* Player, 
 
 void UArchitectorRCO::PerformActionOnTarget(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData)
 {
+	if(!Target.Target) return;
+	
 	FInstanceHandle InstanceHandle;
 	//Make target actor movable
 	if(auto Root = Target.Target->GetRootComponent()) Root->SetMobility(EComponentMobility::Movable);

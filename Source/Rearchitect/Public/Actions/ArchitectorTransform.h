@@ -88,20 +88,6 @@ public:
 };
 
 USTRUCT(Blueprintable, BlueprintType)
-struct FActorTransformCachedData
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(SaveGame, BlueprintReadWrite)
-	FTransform Transform;
-
-	FActorTransformCachedData(){}
-	FActorTransformCachedData(const FTransform& InTransform) : Transform(InTransform){}
-};
-
-USTRUCT(Blueprintable, BlueprintType)
 struct FTargetModifyData
 {
 	GENERATED_BODY()
@@ -113,4 +99,23 @@ public:
 	
 	FTargetModifyData(){}
 	FTargetModifyData(const FArchitectorToolTarget& Target, const FActorTransformModifyData& TransformData) : Target(Target), TransformData(TransformData){}
+};
+
+USTRUCT(Blueprintable, BlueprintType)
+struct FTargetTransformData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FArchitectorToolTarget Target;
+
+	UPROPERTY(BlueprintReadWrite)
+	FTransform ActorTransform = FTransform::Identity;
+
+	UPROPERTY(SaveGame, BlueprintReadWrite)
+	FTransform TestTransform;
+
+	UPROPERTY(SaveGame, BlueprintReadWrite)
+	FTransform AbstractTransform;
 };
