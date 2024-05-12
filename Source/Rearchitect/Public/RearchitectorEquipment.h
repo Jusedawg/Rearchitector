@@ -222,9 +222,9 @@ private:
 		double& NudgeAmount = TargetManager.Movement.NudgeAmount;
 		
 		auto ValueDouble = Value.Get<float>();
-		if(NudgeAmount <= 0.1f && ValueDouble < 0) return;
+		if(NudgeAmount <= 0.1 && ValueDouble < 0) return;
 		
-		if(NudgeAmount < 1.0f || (NudgeAmount == 1.0f && ValueDouble < 0)) ValueDouble *= 0.1f;
+		if(NudgeAmount < 1.0 || (NudgeAmount == 1.0 && ValueDouble < 0)) ValueDouble *= 0.1;
 		
 		NudgeAmount += ValueDouble;
 	}
@@ -234,9 +234,9 @@ private:
 		double& RotateAmount = TargetManager.Rotation.RotateDegrees;
 		
 		auto ValueDouble = Value.Get<float>();
-		if(RotateAmount <= 0.1f && ValueDouble < 0) return;
+		if(RotateAmount <= 0.1 && ValueDouble < 0) return;
 
-		if (RotateAmount < 1.0f || (RotateAmount == 1.0f && ValueDouble < 0)) ValueDouble *= 0.1f;
+		if (RotateAmount < 1.0 || (RotateAmount == 1.0 && ValueDouble < 0)) ValueDouble *= 0.1;
 		
 		RotateAmount += ValueDouble;
 	}
@@ -246,13 +246,9 @@ private:
 		double& Amount = TargetManager.Scale.ScaleFactor;
 		
 		auto ValueDouble = Value.Get<float>();
-		if(Amount <= 0.01f && ValueDouble < 0) return;
-
-		//0.1
-		if (Amount < 1.0f || (Amount == 1.0f && ValueDouble < 0)) ValueDouble *= 0.1f;
-
-		//0.01
-		if (Amount < 0.1f || (Amount == 0.1f && ValueDouble < 0)) ValueDouble *= 0.1f;
+		if(Amount <= 0.1 && ValueDouble < 0) return;
+		
+		if (Amount < 1.0 || (Amount == 1.0 && ValueDouble < 0)) ValueDouble *= 0.1;
 		
 		Amount += ValueDouble;
 	}
